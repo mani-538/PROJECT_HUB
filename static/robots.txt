@@ -4,4 +4,4 @@ Disallow: /admin/
 Disallow: /auth/
 Disallow: /static/uploads/
 
-Sitemap: https://project-hub-app.onrender.com/sitemap.xml
+Sitemap: https://project-hub-web.onrender.com/sitemap.xml
