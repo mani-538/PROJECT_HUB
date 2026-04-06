@@ -64,6 +64,7 @@ def create_app():
     # SEO Routes
     @app.route('/robots.txt')
     @app.route('/sitemap.xml')
+    @app.route('/googled4c284a321eea07d.html')
     def static_from_root():
         return send_from_directory(app.static_folder, request.path[1:])
 
