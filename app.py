@@ -2,7 +2,7 @@
 app.py - Flask Application Factory for Project Hub
 """
 import os
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory, request
 from flask_login import LoginManager
 from models import db, User
 from config import Config
@@ -60,6 +60,12 @@ def create_app():
     @app.errorhandler(500)
     def server_error(e):
         return render_template('errors/500.html'), 500
+
+    # SEO Routes
+    @app.route('/robots.txt')
+    @app.route('/sitemap.xml')
+    def static_from_root():
+        return send_from_directory(app.static_folder, request.path[1:])
 
     return app
 
