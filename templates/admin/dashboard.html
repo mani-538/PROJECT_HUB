@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0 text-dark">System Command Center</h4>
+  <a href="{{ url_for('admin.reports') }}" class="btn-saas text-decoration-none shadow-sm" style="background:var(--dark-panel);">
+    <i class="fas fa-file-pdf me-2"></i>Generate Reports
+  </a>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3 shadow-sm border-0">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ total_projects }}</div>
+          <div class="label">Total Projects</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-folder"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3 shadow-sm border-0">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ pending_proj }}</div>
+          <div class="label">Need Review</div>
+        </div>
+        <div class="kpi-icon kpi-warning"><i class="fas fa-hourglass-start"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3 shadow-sm border-0">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ total_users }}</div>
+          <div class="label">Total Users</div>
+        </div>
+        <div class="kpi-icon kpi-success"><i class="fas fa-users"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3 shadow-sm border-0">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ open_queries }}</div>
+          <div class="label">Open Queries</div>
+        </div>
+        <div class="kpi-icon kpi-info"><i class="fas fa-envelope-open-text"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- System Performance Chart -->
+  <div class="col-md-8">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-chart-area text-primary me-2"></i>Monthly Submissions</h6>
+        <select class="form-select form-select-sm border-0 shadow-sm text-muted" style="width:auto; background:#F5F6FA; border-radius:8px;">
+          <option>Last 6 Months</option>
+          <option>This Year</option>
+        </select>
+      </div>
+      <div style="height:250px;">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status Distribution Pie -->
+  <div class="col-md-4">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-chart-pie text-primary me-2"></i>Projects Status</h6>
+      <div style="height:220px; position:relative;" class="mt-4">
+        <canvas id="statusChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Manage Projects Table -->
+  <div class="col-md-12">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-tasks text-primary me-2"></i>Recent Projects Console</h6>
+        <a href="{{ url_for('admin.projects') }}" class="btn btn-sm text-primary fw-bold text-decoration-none">View Full Directory <i class="fas fa-arrow-right ms-1"></i></a>
+      </div>
+      <div class="table-responsive">
+        <table class="table saas-table table-borderless mb-0">
+          <thead>
+            <tr>
+              <th>Project Title</th>
+              <th>Student</th>
+              <th>Status</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in recent_proj %}
+            <tr style="border-bottom: 2px solid #F5F6FA;">
+              <td class="align-middle">
+                <div class="fw-bold text-truncate" style="max-width:260px; color:var(--dark-panel);">{{ p.title }}</div>
+              </td>
+              <td class="align-middle">
+                <div class="d-flex align-items-center gap-2">
+                  <div class="avatar-sm" style="width:28px;height:28px;font-size:0.75rem;"><i class="fas fa-user"></i></div>
+                  <span class="small fw-medium">{{ p.owner.username }}</span>
+                </div>
+              </td>
+              <td class="align-middle">
+                <span class="badge-saas bg-{{ p.status if p.status in ['pending','approved','completed','rejected'] else 'pending' }} px-3 py-2">{{ p.status|title }}</span>
+              </td>
+              <td class="text-end align-middle">
+                <form action="{{ url_for('admin.project_action', project_id=p.id) }}" method="POST" class="d-inline">
+                  <input type="hidden" name="action" value="approve">
+                  <button type="submit" class="btn btn-sm btn-success py-1 px-3 shadow-sm rounded-pill fw-bold" {% if p.status != 'pending' %}disabled{% endif %}><i class="fas fa-check"></i></button>
+                </form>
+                <form action="{{ url_for('admin.project_action', project_id=p.id) }}" method="POST" class="d-inline ms-1">
+                  <input type="hidden" name="action" value="reject">
+                  <button type="submit" class="btn btn-sm btn-danger py-1 px-3 shadow-sm rounded-pill fw-bold" {% if p.status != 'pending' %}disabled{% endif %}><i class="fas fa-times"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted fw-bold py-4">No recent projects</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Manage Users Table -->
+  <div class="col-md-6">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-user-friends text-primary me-2"></i>Manage Users</h6>
+        <a href="{{ url_for('admin.users') }}" class="small text-decoration-none">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="table saas-table table-borderless mb-0">
+          <thead>
+            <tr>
+              <th>User Details</th>
+              <th>Department</th>
+              <th class="text-end">Ban</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in recent_users %}
+            <tr style="border-bottom: 2px solid #F5F6FA;">
+              <td class="align-middle">
+                <div class="fw-bold small text-dark">{{ u.name or u.username }}</div>
+                <div class="text-muted" style="font-size:0.75rem;">{{ u.email }}</div>
+              </td>
+              <td class="align-middle"><span class="badge bg-light text-dark shadow-sm border">{{ u.department or 'N/A' }}</span></td>
+              <td class="text-end align-middle">
+                <form action="{{ url_for('admin.delete_user', user_id=u.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this user completely?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2 fw-medium border-0"><i class="fas fa-trash-alt fs-6"></i></button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted small py-4">No recent users</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Query Management stub -->
+  <div class="col-md-6">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-question-circle text-primary me-2"></i>Live Queries</h6>
+        <a href="{{ url_for('admin.queries') }}" class="small text-decoration-none bg-light px-2 py-1 rounded">Inbox <span class="badge bg-danger ms-1">{{ open_queries }}</span></a>
+      </div>
+      <div class="d-flex flex-column gap-3 mt-3">
+        {% if open_queries > 0 %}
+        <div class="p-3 shadow-sm" style="background:var(--bg-color); border-radius:12px; border-left:4px solid var(--warning-text);">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="fw-bold fs-6 text-dark flex-grow-1"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Pending Support Tickets</div>
+          </div>
+          <div class="text-muted mt-2 small fw-medium">There are currently {{ open_queries }} unresolved system queries from users waiting for your response. Check the inbox.</div>
+          <a href="{{ url_for('admin.queries') }}" class="btn btn-sm btn-primary w-100 mt-3 fw-bold rounded-pill">Handle Queries Now</a>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="fas fa-check-circle display-4 text-success opacity-50 mb-3"></i>
+          <h6 class="fw-bold">Inbox Zero!</h6>
+          <div class="small fw-medium">All support queries are resolved.</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<!-- AI Insights Widget -->
+<div class="saas-card shadow-lg border-0 mb-4 position-relative overflow-hidden" style="background: linear-gradient(135deg, #1e1e38, #2C2C54); padding:24px;">
+  <!-- Decorative icon -->
+  <div style="position:absolute; bottom:-10px; right:-10px; color:rgba(255,255,255,0.03); font-size:7rem;"><i class="fas fa-brain"></i></div>
+  
+  <div class="d-flex align-items-center gap-2 mb-3 position-relative z-1">
+    <div class="avatar-sm" style="background:#0ea5e9;"><i class="fas fa-chart-line text-dark"></i></div>
+    <h5 class="fw-bold text-white mb-0" style="letter-spacing:0.5px;">Auto Insights</h5>
+  </div>
+  
+  <div class="text-light opacity-75 small mb-4 position-relative z-1 fw-medium" style="line-height:1.6;">
+    <i class="fas fa-rocket text-success me-1"></i> Submissions up by 15% this quarter.<br><br>
+    <i class="fas fa-exclamation-triangle text-warning me-1"></i> Detects bottleneck in Pending Appovals queue. Clean up oldest entries.
+  </div>
+  
+  <a href="{{ url_for('admin.ai_insights') }}" class="btn btn-light text-primary w-100 fw-bold shadow-sm" style="border-radius:10px;">
+    <i class="fas fa-chart-bar me-2"></i>Deep Analytics
+  </a>
+</div>
+
+<!-- 📅 System Tracker (Instead of Day Tracker for Admin) -->
+<div class="saas-card shadow-sm border-0 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-heartbeat text-danger me-2"></i>Health Tracker</h6>
+    <span class="small text-success fw-bold">Live</span>
+  </div>
+  <div class="day-tracker-container mt-2">
+    <!-- Horizontal tracker mimicking the user's request, but adapted for system uptime/activity -->
+    {% for i in range(1, 28) %}
+    {% set is_active = (i != 14) and (i != 21) %}
+    <div class="day-dot {% if is_active %}active{% else %}inactive bg-danger{% endif %}" title="Server Node {{ i }} {% if is_active %}Optimal{% else %}Restarted{% endif %}"></div>
+    {% endfor %}
+  </div>
+  <div class="d-flex gap-3 justify-content-center mt-3 text-muted" style="font-size:0.75rem;">
+    <span class="d-flex align-items-center gap-1"><div class="day-dot bg-danger inactive" style="width:8px;height:8px;"></div> Error</span>
+    <span class="d-flex align-items-center gap-1"><div class="day-dot active" style="width:8px;height:8px;"></div> Operations Normal</span>
+  </div>
+</div>
+
+<!-- Send Announcement Widget -->
+<div class="saas-card shadow-sm border-0 mb-4">
+  <h6 class="card-header-title fw-bold mb-3"><i class="fas fa-broadcast-tower text-primary me-2"></i>Broadcast Alert</h6>
+  <form action="{{ url_for('admin.announcements') }}" method="POST">
+    <input type="text" name="title" class="form-control form-control-sm mb-2 shadow-sm border-0 bg-light py-2" placeholder="Message subject..." required>
+    <textarea name="content" class="form-control form-control-sm mb-3 shadow-sm border-0 bg-light p-2" rows="3" placeholder="Type notification details..." required></textarea>
+    <button type="submit" class="btn btn-sm btn-saas w-100 fw-bold rounded-pill shadow-sm"><i class="fas fa-paper-plane me-2"></i>Send Broadcast</button>
+  </form>
+</div>
+
+<!-- Quick System Nav -->
+<div class="saas-card shadow-sm border-0 mb-0">
+  <h6 class="card-header-title fw-bold mb-3"><i class="fas fa-bolt text-warning me-2"></i>Quick Actions</h6>
+  <div class="d-flex flex-column gap-2">
+    <a href="{{ url_for('admin.certificates') }}" class="btn btn-outline-secondary text-start fw-bold py-2 border ps-3" style="border-radius:10px;"><i class="fas fa-certificate text-warning fs-5 me-2"></i> Appraise Certificates</a>
+    <a href="{{ url_for('admin.system_health') }}" class="btn btn-outline-secondary text-start fw-bold py-2 border ps-3" style="border-radius:10px;"><i class="fas fa-server text-danger fs-5 me-2"></i> Server Status</a>
+    <a href="{{ url_for('admin.showcase') }}" class="btn btn-outline-secondary text-start fw-bold py-2 border ps-3" style="border-radius:10px;"><i class="fas fa-star text-success fs-5 me-2"></i> Manage Showcase</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Extract data from Jinja with safety checks
+const monthlyLabels = {{ monthly_labels|tojson|safe }} || [];
+const monthlyValues = {{ monthly_values|tojson|safe }} || [];
+const statusDistribution = [
+  {{ status_dist.pending|default(0) }},
+  {{ status_dist.approved|default(0) }},
+  {{ status_dist.completed|default(0) }},
+  {{ status_dist.rejected|default(0) }}
+];
+
+const sharedOptions = { 
+  responsive: true, 
+  maintainAspectRatio: false, 
+  plugins: { legend: { display: false } }, 
+  scales: { 
+    y: { beginAtZero: true, display: false }, 
+    x: { grid: { display: false } } 
+  } 
+};
+
+// Monthly Submissions Chart
+const monthlyCtx = document.getElementById('monthlyChart');
+if (monthlyCtx) {
+  new Chart(monthlyCtx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Submissions',
+        data: monthlyValues,
+        borderColor: '#6C5CE7',
+        backgroundColor: 'rgba(108, 92, 231, 0.15)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 3
+      }]
+    },
+    options: sharedOptions
+  });
+}
+
+// Status Doughnut Chart
+const statusCtx = document.getElementById('statusChart');
+if (statusCtx) {
+  new Chart(statusCtx.getContext('2d'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Pending', 'Approved', 'Completed', 'Rejected'],
+      datasets: [{
+        data: statusDistribution,
+        backgroundColor: ['#F59E0B', '#10B981', '#6C5CE7', '#EF4444'],
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { 
+          position: 'right', 
+          labels: { usePointStyle: true, padding: 15, font: { size: 11 } } 
+        }
+      }
+    }
+  });
+}
+</script>
+{% endblock %}

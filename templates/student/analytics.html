@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% block title %}Analytics{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-bar-chart-line me-2 text-primary"></i>Analytics Dashboard</h1>
+  <p>Visual insights into your project activity and performance.</p>
+</div>
+
+<!-- Summary Row -->
+<div class="row g-4 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-primary"><div class="number">{{ projects|length }}</div><div class="label">Total Projects</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-success"><div class="number">{{ projects|selectattr('status','equalto','completed')|list|length }}</div><div class="label">Completed</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-info"><div class="number">{{ domain_labels|length }}</div><div class="label">Domains Covered</div></div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-warning">
+      <div class="number">
+        {% set rated = projects|selectattr('rating')|list %}
+        {% if rated %}{{ (rated|sum(attribute='rating') / rated|length)|round(1) }}{% else %}—{% endif %}
+      </div>
+      <div class="label">Avg Rating</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Domain Distribution -->
+  <div class="col-md-6">
+    <div class="card p-4 h-100">
+      <h6 class="fw-700 mb-3" style="font-weight:700;"><i class="bi bi-pie-chart me-2 text-primary"></i>Projects by Domain</h6>
+      <div class="chart-container">
+        <canvas id="domainChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Submissions -->
+  <div class="col-md-6">
+    <div class="card p-4 h-100">
+      <h6 class="fw-700 mb-3" style="font-weight:700;"><i class="bi bi-calendar3 me-2 text-success"></i>Monthly Submissions</h6>
+      <div class="chart-container">
+        <canvas id="monthlyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="col-md-6">
+    <div class="card p-4 h-100">
+      <h6 class="fw-700 mb-3" style="font-weight:700;"><i class="bi bi-tools me-2 text-warning"></i>Technology Usage</h6>
+      <div class="chart-container">
+        <canvas id="techChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="col-md-6">
+    <div class="card p-4 h-100">
+      <h6 class="fw-700 mb-3" style="font-weight:700;"><i class="bi bi-clock-history me-2 text-info"></i>Recent Activity</h6>
+      {% if activity_data %}
+      <div class="timeline" style="max-height:240px;overflow-y:auto;">
+        {% for log in activity_data %}
+        <div class="timeline-item">
+          <span class="small text-muted me-2">{{ log.created_at.strftime('%d %b') }}</span>
+          <span class="small">{{ log.action }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4">No activity recorded yet.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const palette = ['#4f46e5','#10b981','#f59e0b','#ef4444','#06b6d4','#8b5cf6','#ec4899','#14b8a6'];
+const chartOpts = (type) => ({
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom', labels: { padding:14, usePointStyle:true } } }
+});
+
+new Chart(document.getElementById('domainChart'), {
+  type: 'doughnut',
+  data: {
+    labels: {{ domain_labels|tojson }},
+    datasets: [{ data: {{ domain_values|tojson }}, backgroundColor: palette, borderWidth: 0 }]
+  },
+  options: { ...chartOpts(), cutout:'60%' }
+});
+
+new Chart(document.getElementById('monthlyChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ monthly_labels|tojson }},
+    datasets: [{ label:'Projects', data: {{ monthly_values|tojson }}, backgroundColor:'#4f46e5', borderRadius:6 }]
+  },
+  options: { ...chartOpts(), plugins: { legend: { display:false } } }
+});
+
+{% if tech_labels %}
+new Chart(document.getElementById('techChart'), {
+  type: 'bar',
+  data: {
+    labels: {{ tech_labels|tojson }},
+    datasets: [{ label:'Uses', data: {{ tech_values|tojson }}, backgroundColor: palette, borderRadius:6 }]
+  },
+  options: { indexAxis:'y', ...chartOpts(), plugins: { legend: { display:false } } }
+});
+{% endif %}
+</script>
+{% endblock %}

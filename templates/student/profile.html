@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-person-circle me-2 text-primary"></i>My Profile</h1>
+  <p>Update your personal information and upload your resume.</p>
+</div>
+
+<div class="row g-4">
+  <!-- Profile Card -->
+  <div class="col-md-4">
+    <div class="saas-card p-4 text-center mb-0">
+      <div class="mb-4">
+        {% if current_user.profile_image %}
+        <img src="{{ url_for('student.profile_image', filename=current_user.profile_image) }}" class="avatar xl shadow-sm" alt="Profile">
+        {% else %}
+        <div class="avatar xl shadow-sm">{{ (current_user.name or current_user.username)[0].upper() }}</div>
+        {% endif %}
+      </div>
+      <h5 class="fw-bold mb-1">{{ current_user.name or current_user.username }}</h5>
+      <div class="text-muted small mb-3">{{ current_user.email }}</div>
+      <span class="badge bg-primary px-3 rounded-pill" style="font-size:0.7rem;">{{ current_user.role|title }} Student</span>
+      
+      <div class="mt-4 text-start">
+        <div class="d-flex justify-content-between py-2 border-bottom small text-muted">
+          <span>Department</span><span class="text-dark fw-bold">{{ current_user.department or '—' }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom small text-muted">
+          <span>Year of Study</span><span class="text-dark fw-bold">{{ current_user.year or '—' }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 border-bottom small text-muted">
+          <span>College</span><span class="text-dark fw-bold">{{ current_user.college or '—' }}</span>
+        </div>
+        <div class="d-flex justify-content-between py-2 small text-muted">
+          <span>Mobile</span><span class="text-dark fw-bold">{{ current_user.mobile or '—' }}</span>
+        </div>
+      </div>
+      
+      {% if current_user.resume %}
+      <a href="{{ url_for('student.download_resume') }}" class="btn btn-outline-primary btn-sm mt-4 w-100 fw-bold" style="border-radius:10px;">
+        <i class="fas fa-file-download me-2"></i>Download Resume
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Edit Form -->
+  <div class="col-md-8">
+    <div class="saas-card p-4 mb-0">
+      <h6 class="card-header-title fw-bold mb-4"><i class="fas fa-user-edit text-primary me-2"></i>Edit Information</h6>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Full Name</label>
+            <input type="text" name="name" class="form-control border-0 bg-light py-2 px-3" style="border-radius:10px;" value="{{ current_user.name or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Mobile</label>
+            <input type="tel" name="mobile" class="form-control border-0 bg-light py-2 px-3" style="border-radius:10px;" value="{{ current_user.mobile or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Date of Birth</label>
+            <input type="date" name="dob" class="form-control border-0 bg-light py-2 px-3" style="border-radius:10px;" value="{{ current_user.dob or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">College</label>
+            <input type="text" name="college" class="form-control border-0 bg-light py-2 px-3" style="border-radius:10px;" value="{{ current_user.college or '' }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Department</label>
+            <select name="department" class="form-select border-0 bg-light py-2 px-3" style="border-radius:10px;">
+              {% for d in ['CSE','IT','ECE','EEE','MECH','CIVIL','MBA','MCA','Other'] %}
+              <option {% if current_user.department == d %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Year of Study</label>
+            <select name="year" class="form-select border-0 bg-light py-2 px-3" style="border-radius:10px;">
+              {% for y in ['1st Year','2nd Year','3rd Year','4th Year','PG'] %}
+              <option {% if current_user.year == y %}selected{% endif %}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold small">Short Bio</label>
+            <textarea name="bio" class="form-control border-0 bg-light p-3" rows="3" style="border-radius:12px;" placeholder="Tell us about yourself...">{{ current_user.bio or '' }}</textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Profile Photo <span class="text-muted" style="font-size:0.7rem;">(Max 2MB)</span></label>
+            <input type="file" name="profile_image" class="form-control border-0 bg-light" style="border-radius:10px;" accept="image/*">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Resume <span class="text-muted" style="font-size:0.7rem;">(PDF, DOC)</span></label>
+            <input type="file" name="resume" class="form-control border-0 bg-light" style="border-radius:10px;" accept=".pdf,.doc,.docx">
+          </div>
+          <div class="col-12 mt-4 text-end">
+            <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow-sm" style="border-radius:12px;">
+              <i class="fas fa-save me-2"></i>Save Profile Changes
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

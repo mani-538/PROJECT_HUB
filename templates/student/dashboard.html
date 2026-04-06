@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+{% block title %}Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0 text-dark">Dashboard Overview</h4>
+  <a href="{{ url_for('student.add_project') }}" class="btn-saas text-decoration-none shadow-sm">
+    <i class="fas fa-plus me-1"></i> New Project
+  </a>
+</div>
+
+<!-- KPI Stats Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ total }}</div>
+          <div class="label">Total Projects</div>
+        </div>
+        <div class="kpi-icon"><i class="fas fa-folder-open"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ completed }}</div>
+          <div class="label">Completed</div>
+        </div>
+        <div class="kpi-icon kpi-success"><i class="fas fa-check-circle"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ pending }}</div>
+          <div class="label">Pending</div>
+        </div>
+        <div class="kpi-icon kpi-warning"><i class="fas fa-hourglass-half"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="saas-card h-100 mb-0 py-3">
+      <div class="kpi-card">
+        <div>
+          <div class="number">{{ approved }}</div>
+          <div class="label">Approved</div>
+        </div>
+        <div class="kpi-icon kpi-info"><i class="fas fa-thumbs-up"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <!-- Performance Chart -->
+  <div class="col-12 col-md-8">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="card-header-title mb-0 fw-bold"><i class="fas fa-chart-line text-primary me-2"></i>Performance Activity</h6>
+        <select class="form-select form-select-sm border-0 shadow-sm text-muted" style="width:auto; background:#F5F6FA; border-radius:8px;">
+          <option>This Week</option>
+          <option>This Month</option>
+          <option>This Year</option>
+        </select>
+      </div>
+      <div style="height:250px;">
+        <canvas id="performanceChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Domain Chart -->
+  <div class="col-12 col-md-4">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <h6 class="card-header-title fw-bold"><i class="fas fa-chart-pie text-primary me-2"></i>Project Domains</h6>
+      <div style="height:220px; position:relative;" class="mt-4">
+        <canvas id="domainChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Active Projects -->
+  <div class="col-12 col-md-7">
+    <div class="saas-card h-100 mb-0 shadow-sm">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h6 class="card-header-title mb-0 fw-bold"><i class="fas fa-tasks text-primary me-2"></i>Active Projects</h6>
+        <a href="{{ url_for('student.projects') }}" class="btn btn-sm text-primary fw-bold text-decoration-none">View All <i class="fas fa-arrow-right ms-1"></i></a>
+      </div>
+      
+      {% if upcoming %}
+      <div class="d-flex flex-column gap-3">
+        {% for p in upcoming[:3] %}
+        {% set prog = 65 %}
+        <div class="p-4" style="background:#Fcfcfc; border-radius:14px; border:1px solid #f1f2f6; transition:var(--transition);" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="fw-bold" style="font-size:1.05rem; color:var(--dark-panel);">{{ p.title }}</div>
+            <span class="badge-saas bg-{{ p.status if p.status in ['pending','approved','completed','rejected'] else 'pending' }}">{{ p.status|title }}</span>
+          </div>
+          <div class="d-flex justify-content-between small text-muted mb-2 fw-medium">
+            <span>Progress Estimate</span>
+            <span>{{ prog }}%</span>
+          </div>
+          <div class="progress shadow-sm" style="height:8px; border-radius:4px; background:#e2e8f0;">
+            <div class="progress-bar" style="width:{{ prog }}%; background:linear-gradient(90deg, var(--primary), #a29bfe);"></div>
+          </div>
+          <div class="d-flex justify-content-between mt-3 align-items-center">
+            <span class="small text-muted fw-medium"><i class="fas fa-calendar-alt me-1 text-secondary"></i>Due: {{ p.deadline.strftime('%b %d, %Y') }}</span>
+            <a href="{{ url_for('student.project_detail', project_id=p.id) }}" class="btn btn-sm btn-light py-1 px-3 shadow-sm border" style="border-radius:6px; font-weight:500;">View Details</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-5">
+        <i class="fas fa-folder-open mb-3 text-secondary opacity-50" style="font-size:3rem;"></i>
+        <h6 class="fw-bold text-dark">No Active Projects</h6>
+        <p class="small">Start by creating a new project today.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Timeline / Schedule -->
+  <div class="col-12 col-md-5">
+    <div class="saas-card h-100 mb-0 shadow-sm border-0">
+      <h6 class="card-header-title fw-bold"><i class="fas fa-calendar-check text-primary me-2"></i>Timeline & Schedule</h6>
+      {% if upcoming %}
+      <div class="timeline mt-4">
+        {% for p in upcoming[:5] %}
+        {% set days_left = (p.deadline - today).days %}
+        <div class="timeline-item">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <div class="fw-bold" style="color:var(--dark-panel); font-size:0.95rem;">{{ p.title }}</div>
+            <span class="badge bg-light text-{% if days_left <= 3 %}danger{% elif days_left <= 7 %}warning{% else %}success{% endif %} shadow-sm border" style="font-size:0.7rem;">
+              <i class="fas fa-clock me-1"></i>{{ days_left }}d left
+            </span>
+          </div>
+          <div class="text-muted small fw-medium">Milestone Deadline: {{ p.deadline.strftime('%d %b %Y') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-5">
+        <i class="fas fa-calendar-times mb-3 opacity-50 text-secondary" style="font-size:3rem;"></i>
+        <div>No upcoming deadlines</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block right_panel %}
+<!-- 🤖 AI Assistant Panel -->
+<div class="saas-card shadow-sm border-0 mb-4 position-relative overflow-hidden" style="background: linear-gradient(145deg, #1e1e38, #2C2C54); padding:24px;">
+  <!-- Decorative AI element -->
+  <div style="position:absolute; top:-20px; right:-20px; color:rgba(255,255,255,0.03); font-size:8rem;"><i class="fas fa-robot"></i></div>
+  
+  <div class="d-flex align-items-center gap-2 mb-3 position-relative z-1">
+    <div class="avatar-sm bg-warning"><i class="fas fa-bolt text-dark"></i></div>
+    <h5 class="fw-bold text-white mb-0" style="letter-spacing:0.5px;">AI Assistant</h5>
+  </div>
+  
+  <div class="text-light opacity-75 small mb-4 position-relative z-1 fw-medium" style="line-height:1.6;">
+    <i class="fas fa-lightbulb text-warning me-1"></i> Add OAuth2 authentication to your Web App for higher grades.<br><br>
+    <i class="fas fa-magic text-info me-1"></i> Your resume matches 85% of standard ML roles!
+  </div>
+  
+  <div class="d-flex flex-column gap-2 position-relative z-1">
+    <a href="{{ url_for('student.ai_describe') }}" class="btn btn-warning w-100 fw-bold shadow-sm" style="border-radius:10px;">
+      <i class="fas fa-pen-nib me-2"></i>Generate Description
+    </a>
+    <a href="{{ url_for('student.ai_resume') }}" class="btn btn-outline-light w-100 fw-bold" style="border-radius:10px;">
+      <i class="fas fa-file-alt me-2"></i>Resume Analyzer
+    </a>
+  </div>
+</div>
+
+<!-- 📅 Day-wise Activity Tracker -->
+<div class="saas-card shadow-sm border-0 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="card-header-title fw-bold mb-0"><i class="fas fa-history text-primary me-2"></i>Daily Activity</h6>
+    <span class="small text-muted fw-bold">Recent</span>
+  </div>
+  <div class="day-tracker-container mt-2">
+    <!-- Horizontal dots tracker. Emulating activity tracking based on latest days -->
+    {% for dot in activity_dots %}
+    <div class="day-dot {% if dot.active %}active{% else %}inactive{% endif %}" title="{{ dot.day }}{% if dot.active %}: Activity Logged{% else %}: No Updates{% endif %}"></div>
+    {% endfor %}
+  </div>
+  <div class="d-flex justify-content-between mt-3 text-muted" style="font-size:0.75rem;">
+    <span class="d-flex align-items-center gap-1"><div class="day-dot inactive" style="width:8px;height:8px;"></div> Inactive</span>
+    <span class="d-flex align-items-center gap-1"><div class="day-dot active" style="width:8px;height:8px;"></div> Active Tracking</span>
+  </div>
+</div>
+
+<!-- 🔔 Notifications Panel -->
+<div class="saas-card shadow-sm border-0 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h6 class="card-header-title mb-0 fw-bold"><i class="fas fa-bell text-primary me-2"></i>Notifications</h6>
+    <a href="{{ url_for('student.notifications') }}" class="small text-decoration-none">View All</a>
+  </div>
+  {% if recent_notifs %}
+  <div class="d-flex flex-column gap-3 mt-3">
+    {% for n in recent_notifs[:4] %}
+    <div class="d-flex gap-3 align-items-start p-2 rounded hover-bg" style="transition:0.2s; cursor:pointer;" onmouseover="this.style.backgroundColor='#F5F6FA'" onmouseout="this.style.backgroundColor='transparent'">
+      <div class="mt-1">
+        <i class="fas {% if n.notif_type=='success' %}fa-check-circle text-success{% elif n.notif_type=='warning' %}fa-exclamation-triangle text-warning{% else %}fa-info-circle text-primary{% endif %} fs-5"></i>
+      </div>
+      <div>
+        <div class="small fw-medium" style="color:var(--dark-panel);">{{ n.message }}</div>
+        <div class="text-muted mt-1" style="font-size:0.7rem;"><i class="far fa-clock me-1"></i>{{ n.created_at.strftime('%d %b, %I:%M %p') }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted small py-4 fw-medium">No new notifications</div>
+  {% endif %}
+</div>
+
+<!-- 📢 Announcements Panel -->
+<div class="saas-card shadow-sm border-0 mb-0">
+  <h6 class="card-header-title fw-bold mb-3"><i class="fas fa-bullhorn text-primary me-2"></i>System Updates</h6>
+  {% if announcements %}
+  <div class="d-flex flex-column gap-3">
+    {% for ann in announcements[:3] %}
+    <div class="p-3" style="background:#FFF8E1; border-radius:10px; border-left: 4px solid #FFC107;">
+      <div class="fw-bold small text-dark mb-1">{{ ann.title }}</div>
+      <div class="text-muted fw-medium" style="font-size:0.75rem;">{{ ann.content[:65] }}...</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center text-muted small py-4 fw-medium">No announcements right now</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mock data for Line Chart (Performance)
+const perfCtx = document.getElementById('performanceChart').getContext('2d');
+new Chart(perfCtx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_data.labels | tojson }},
+    datasets: [
+      {
+        label: 'Daily Progress Updates',
+        data: {{ chart_data.counts | tojson }},
+        borderColor: '#6C5CE7',
+        backgroundColor: 'rgba(108, 92, 231, 0.1)',
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top', align: 'end', labels:{usePointStyle:true} } },
+    scales: {
+      y: { display:false },
+      x: { grid: { display:false } }
+    }
+  }
+});
+
+// Domain Pie Chart Mock
+const domainCtx = document.getElementById('domainChart').getContext('2d');
+new Chart(domainCtx, {
+  type: 'doughnut',
+  data: {
+    labels: {{ chart_data.domain_labels | tojson }},
+    datasets: [{
+      data: {{ chart_data.domain_values | tojson }},
+      backgroundColor: ['#6C5CE7', '#A29BFE', '#F59E0B', '#10B981', '#3498db', '#e74c3c'],
+      borderWidth: 0,
+      hoverOffset: 4
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '72%',
+    plugins: {
+      legend: { position: 'bottom', labels: { usePointStyle:true, padding:20, font: {size:11} } }
+    }
+  }
+});
+</script>
+{% endblock %}

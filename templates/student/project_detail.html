@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.title }}{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h1 class="mb-1">{{ project.title }}</h1>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge badge-{{ project.status }}">{{ project.status|title }}</span>
+      <span class="badge bg-light text-dark">{{ project.project_type|title }}</span>
+      {% if project.domain %}<span class="badge" style="background:rgba(6,182,212,0.1);color:#0891b2;">{{ project.domain }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if project.status == 'completed' %}
+    <a href="{{ url_for('student.certificate', project_id=project.id) }}" class="btn btn-warning btn-sm">
+      <i class="bi bi-award me-1"></i>Certificate
+    </a>
+    {% endif %}
+    {% if project.github_link %}
+    <a href="{{ project.github_link }}" target="_blank" class="btn btn-dark btn-sm"><i class="bi bi-github me-1"></i>GitHub</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Project Info -->
+  <div class="col-md-8">
+    <div class="card p-4 mb-4">
+      <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;">📋 Project Details</h6>
+      {% if project.description %}
+      <p>{{ project.description }}</p>
+      {% endif %}
+      {% if project.problem_statement %}
+      <div class="mb-3">
+        <span class="fw-600" style="font-weight:600;">Problem Statement:</span>
+        <p class="mt-1 text-muted">{{ project.problem_statement }}</p>
+      </div>
+      {% endif %}
+      {% if project.tech_stack %}
+      <div class="mb-2">
+        <span class="fw-600" style="font-weight:600;">Tech Stack:</span>
+        <div class="mt-1 d-flex flex-wrap gap-1">
+          {% for t in project.tech_stack.split(',') %}
+          <span class="badge" style="background:rgba(79,70,229,0.1);color:var(--primary);">{{ t.strip() }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% if project.admin_feedback %}
+      <div class="mt-3 p-3 rounded" style="background:rgba(16,185,129,0.08);border-left:3px solid var(--success);">
+        <strong class="text-success">Admin Feedback:</strong>
+        <p class="mb-0 mt-1">{{ project.admin_feedback }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Updates Timeline -->
+    <div class="card p-4 mb-4">
+      <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;">📝 Project Updates</h6>
+      <form method="POST" action="{{ url_for('student.add_update', project_id=project.id) }}" class="mb-4">
+        <div class="d-flex gap-2">
+          <input type="text" name="content" class="form-control" placeholder="Add today's progress update..." required>
+          <button type="submit" class="btn btn-primary px-3">Post</button>
+        </div>
+      </form>
+      {% if updates %}
+      <div class="timeline">
+        {% for u in updates %}
+        <div class="timeline-item">
+          <div class="small text-muted">{{ u.created_at.strftime('%d %b %Y, %H:%M') }}</div>
+          <div>{{ u.content }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-3">No updates yet. Post your first update!</div>
+      {% endif %}
+    </div>
+
+    <!-- Version Control -->
+    <div class="card p-4">
+      <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;">📁 Files & Versions</h6>
+      <form method="POST" action="{{ url_for('student.upload_version', project_id=project.id) }}" enctype="multipart/form-data" class="mb-4">
+        <div class="row g-2">
+          <div class="col-md-3">
+            <input type="text" name="version" class="form-control" placeholder="Version (e.g. 2.0)" required>
+          </div>
+          <div class="col-md-3">
+            <input type="text" name="description" class="form-control" placeholder="What changed?">
+          </div>
+          <div class="col-md-4">
+            <input type="file" name="version_file" class="form-control" required>
+          </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Upload</button>
+          </div>
+        </div>
+      </form>
+      {% if files %}
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead><tr><th>Version</th><th>File</th><th>Description</th><th>Uploaded</th><th>Download</th></tr></thead>
+          <tbody>
+            {% for f in files %}
+            <tr>
+              <td><span class="badge bg-primary">v{{ f.version }}</span></td>
+              <td>{{ f.filename }}</td>
+              <td class="text-muted">{{ f.description or '—' }}</td>
+              <td class="text-muted small">{{ f.uploaded_at.strftime('%d %b %Y') }}</td>
+              <td><a href="{{ url_for('student.download_file', file_id=f.id) }}" class="btn btn-xs btn-outline-primary btn-sm py-0 px-2">
+                <i class="bi bi-download"></i>
+              </a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-2">No files uploaded yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Sidebar Info -->
+  <div class="col-md-4">
+    <!-- Meta Card -->
+    <div class="card p-4 mb-4">
+      <h6 class="fw-700 mb-3" style="font-weight:700;">ℹ️ Project Info</h6>
+      <ul class="list-unstyled mb-0">
+        <li class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Created</span>
+          <span>{{ project.created_at.strftime('%d %b %Y') }}</span>
+        </li>
+        <li class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Deadline</span>
+          <span {% if project.deadline %}class="fw-600" style="font-weight:600;"{% endif %}>
+            {{ project.deadline.strftime('%d %b %Y') if project.deadline else '—' }}
+          </span>
+        </li>
+        <li class="d-flex justify-content-between py-2 border-bottom">
+          <span class="text-muted">Type</span>
+          <span>{{ project.project_type|title }}</span>
+        </li>
+        {% if project.rating %}
+        <li class="d-flex justify-content-between py-2">
+          <span class="text-muted">Rating</span>
+          <span>
+            {% for i in range(5) %}<i class="bi bi-star{% if i < project.rating|int %}-fill text-warning{% endif %} small"></i>{% endfor %}
+            {{ project.rating }}/5
+          </span>
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+
+    <!-- Team Members -->
+    {% if members %}
+    <div class="card p-4">
+      <h6 class="fw-700 mb-3" style="font-weight:700;">👥 Team Members</h6>
+      {% for m in members %}
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <div class="avatar" style="width:36px;height:36px;font-size:0.8rem;">{{ m.name[0].upper() if m.name else '?' }}</div>
+        <div>
+          <div class="fw-600 small" style="font-weight:600;">{{ m.name }}</div>
+          <div class="text-muted" style="font-size:0.75rem;">{{ m.role }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Add New Project{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-plus-circle me-2 text-primary"></i>Add New Project</h1>
+  <p>Fill in the details to create your project.</p>
+</div>
+
+<div class="card p-4">
+  <form method="POST" enctype="multipart/form-data">
+    <div class="row g-4">
+
+      <!-- Basic Info -->
+      <div class="col-12">
+        <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;color:var(--primary);">📋 Basic Information</h6>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label">Project Title <span class="text-danger">*</span></label>
+            <input type="text" name="title" class="form-control" placeholder="Enter a clear, descriptive title" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Project Type <span class="text-danger">*</span></label>
+            <select name="project_type" id="project_type" class="form-select">
+              <option value="individual">Individual</option>
+              <option value="team">Team</option>
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="3" placeholder="Brief overview of your project..."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Problem Statement</label>
+            <textarea name="problem_statement" class="form-control" rows="3" placeholder="What problem does this project solve?"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Team Section (hidden by default) -->
+      <div class="col-12" id="team-section" style="display:none;">
+        <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;color:var(--primary);">👥 Team Members</h6>
+        <div class="mb-3">
+          <label class="form-label">Team Size</label>
+          <input type="number" name="team_size" class="form-control" value="2" min="2" max="10" style="max-width:120px;">
+        </div>
+        <div id="members-container">
+          <div class="row g-2 mb-2 member-row">
+            <div class="col-md-4">
+              <input type="text" name="member_name[]" class="form-control" placeholder="Member Name">
+            </div>
+            <div class="col-md-4">
+              <input type="text" name="member_role[]" class="form-control" placeholder="Role (e.g. Developer)">
+            </div>
+            <div class="col-md-3">
+              <input type="email" name="member_email[]" class="form-control" placeholder="Email">
+            </div>
+            <div class="col-md-1">
+              <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeMemberRow(this)"><i class="bi bi-trash"></i></button>
+            </div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addMemberRow()">
+          <i class="bi bi-person-plus me-1"></i>Add Member
+        </button>
+      </div>
+
+      <!-- Technical Details -->
+      <div class="col-12">
+        <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;color:var(--primary);">⚙️ Technical Details</h6>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Domain / Category</label>
+            <select name="domain" class="form-select">
+              <option value="">Select Domain</option>
+              <option>AI/ML</option><option>Web Development</option><option>Mobile Development</option>
+              <option>IoT</option><option>Cybersecurity</option><option>Data Science</option>
+              <option>Cloud Computing</option><option>Blockchain</option><option>Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Technologies Used</label>
+            <input type="text" name="tech_stack" class="form-control" placeholder="e.g. Python, React, MySQL">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">GitHub Repository</label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-github"></i></span>
+              <input type="url" name="github_link" class="form-control" placeholder="https://github.com/...">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Project Deadline</label>
+            <input type="date" name="deadline" class="form-control">
+          </div>
+        </div>
+      </div>
+
+      <!-- File Upload -->
+      <div class="col-12">
+        <h6 class="fw-700 border-bottom pb-2 mb-3" style="font-weight:700;color:var(--primary);">📁 File Upload</h6>
+        <label class="form-label">Upload Project File <span class="text-muted">(PDF, DOC, ZIP, PY, IPYNB, etc.)</span></label>
+        <input type="file" name="project_file" class="form-control">
+        <small class="text-muted">Max file size: 16MB</small>
+      </div>
+
+      <!-- Submit -->
+      <div class="col-12 d-flex gap-3">
+        <button type="submit" class="btn btn-primary px-4 py-2">
+          <i class="bi bi-cloud-upload me-2"></i>Create Project
+        </button>
+        <a href="{{ url_for('student.projects') }}" class="btn btn-outline-secondary px-4 py-2">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

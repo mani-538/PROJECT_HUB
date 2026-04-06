@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/auth-theme.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="bg-circle circle1"></div>
+<div class="bg-circle circle2"></div>
+<div class="bg-circle circle3"></div>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: calc(100vh - 8rem);">
+    <div class="glass-card fade-in-up">
+        <div class="logo-wrapper logo-large mb-4">
+            <div class="logo-symbol"><i class="fas fa-infinity"></i></div>
+            <div class="logo-text">Project Hub</div>
+        </div>
+        <h3 class="mb-2 fw-bold">Sign Up</h3>
+        <p class="text-center mb-4" style="color:rgba(255,255,255,0.7);">Registering as <strong class="text-info">{{ role|title }}</strong></p>
+
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text"><i class="fas fa-at"></i></span>
+              <input type="text" name="username" class="form-control" placeholder="Choose a username" required autofocus>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email Address</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+              <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text"><i class="fas fa-lock"></i></span>
+              <input type="password" name="password" class="form-control" placeholder="Create a strong password" required>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="form-label">Confirm Password</label>
+            <div class="input-group shadow-sm">
+              <span class="input-group-text"><i class="fas fa-lock"></i></span>
+              <input type="password" name="confirm_password" class="form-control" placeholder="Repeat your password" required>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 py-2 fw-bold shadow-sm">
+            <i class="fas fa-user-plus me-2"></i>Create Account
+          </button>
+        </form>
+        
+        <hr class="my-3 border-secondary" style="opacity:0.3;">
+        <p class="text-center small mt-3 mb-0" style="color:rgba(255,255,255,0.7);">
+          Already have an account? <a href="{{ url_for('auth.login') }}" class="fw-bold">Sign In</a>
+          &nbsp;|&nbsp; <a href="{{ url_for('auth.role_select') }}" class="fw-bold">Change Role</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

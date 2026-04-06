@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Resume Analyzer{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-file-person me-2 text-success"></i>AI Resume Analyzer</h1>
+  <p>Upload your resume to get an AI-powered score, strengths, and improvement suggestions.</p>
+</div>
+<div class="row g-4">
+  <div class="col-md-4">
+    <div class="ai-card text-center">
+      <div style="font-size:4rem;">📄</div>
+      <h5 class="fw-700 mt-3 mb-2" style="font-weight:700;">Upload Your Resume</h5>
+      <p style="color:rgba(255,255,255,0.7);font-size:0.9rem;">Supports PDF, DOC, DOCX formats</p>
+      <form method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+          <input type="file" name="resume_file" class="form-control" accept=".pdf,.doc,.docx" required>
+        </div>
+        <button type="submit" class="btn w-100 py-2 fw-600" style="background:#fff;color:#4f46e5;font-weight:600;">
+          <i class="bi bi-search me-2"></i>Analyze Resume
+        </button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-8">
+    {% if result %}
+    <div class="fade-in-up">
+      <!-- Score Card -->
+      <div class="card p-4 mb-4 text-center">
+        <div class="stat-card {% if result.score >= 80 %}stat-success{% elif result.score >= 60 %}stat-warning{% else %}stat-danger{% endif %} d-inline-block mx-auto px-5 py-4 rounded">
+          <div class="number">{{ result.score }}</div>
+          <div class="label">Resume Score / 100</div>
+          <div class="mt-2"><span class="badge bg-white text-dark fs-5">Grade: {{ result.grade }}</span></div>
+        </div>
+        <div class="mt-3">
+          <div class="progress" style="height:12px;max-width:400px;margin:0 auto;">
+            <div class="progress-bar" style="width:{{ result.score }}%;background:{% if result.score>=80 %}#10b981{% elif result.score>=60 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+          </div>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card p-3 h-100" style="border-left:3px solid #10b981;">
+            <h6 class="fw-700 text-success mb-3" style="font-weight:700;"><i class="bi bi-check-circle me-2"></i>Strengths</h6>
+            <ul class="list-unstyled mb-0">
+              {% for s in result.strengths %}
+              <li class="mb-2 d-flex gap-2"><i class="bi bi-check2 text-success mt-1 flex-shrink-0"></i><span class="small">{{ s }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 h-100" style="border-left:3px solid #ef4444;">
+            <h6 class="fw-700 text-danger mb-3" style="font-weight:700;"><i class="bi bi-x-circle me-2"></i>Weaknesses</h6>
+            <ul class="list-unstyled mb-0">
+              {% for w in result.weaknesses %}
+              <li class="mb-2 d-flex gap-2"><i class="bi bi-dash text-danger mt-1 flex-shrink-0"></i><span class="small">{{ w }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card p-3 h-100" style="border-left:3px solid #4f46e5;">
+            <h6 class="fw-700 mb-3" style="font-weight:700;color:var(--primary);"><i class="bi bi-lightbulb me-2"></i>Suggestions</h6>
+            <ul class="list-unstyled mb-0">
+              {% for sg in result.suggestions %}
+              <li class="mb-2 d-flex gap-2"><i class="bi bi-arrow-right text-primary mt-1 flex-shrink-0"></i><span class="small">{{ sg }}</span></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <div style="font-size:5rem;">🎯</div>
+      <h5 class="mt-3">Upload your resume to get started</h5>
+      <p class="text-muted">Get instant feedback on your score, strengths, weaknesses, and actionable improvement tips.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

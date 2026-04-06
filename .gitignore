@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+venv/
+env/
+
+# Database
+instance/
+project_hub.db
+
+# Flask
+uploads/certificates/*
+uploads/profile_images/*
+uploads/project_files/*
+uploads/resumes/*
+!uploads/.gitkeep
+
+# IDEs
+.vscode/
+.idea/

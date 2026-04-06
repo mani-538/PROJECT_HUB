@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Manage Showcase{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1><i class="bi bi-stars me-2 text-warning"></i>Manage Showcase</h1>
+  <p>Toggle completed projects visibility on the public showcase.</p>
+</div>
+
+{% if projects %}
+<div class="row g-4">
+  {% for p in projects %}
+  <div class="col-md-6 fade-in-up">
+    <div class="card p-4 h-100">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <div>
+          <h6 class="fw-700 mb-1" style="font-weight:700;">{{ p.title }}</h6>
+          <div class="text-muted small">By {{ p.owner.name or p.owner.username }}</div>
+        </div>
+        {% if p.is_public %}
+        <span class="badge bg-success"><i class="bi bi-eye me-1"></i>Public</span>
+        {% else %}
+        <span class="badge bg-secondary"><i class="bi bi-eye-slash me-1"></i>Hidden</span>
+        {% endif %}
+      </div>
+      <p class="text-muted small mb-3">{{ p.description[:100] }}{% if p.description|length > 100 %}...{% endif %}</p>
+      <div class="mt-auto d-flex justify-content-between align-items-center border-top border-secondary pt-3">
+        <div>
+          {% if p.rating %}
+          {% for i in range(5) %}<i class="bi bi-star{% if i < p.rating|int %}-fill text-warning{% endif %} small"></i>{% endfor %}
+          {% endif %}
+        </div>
+        <form method="POST" action="{{ url_for('admin.toggle_showcase', project_id=p.id) }}">
+          <button type="submit" class="btn btn-sm {% if p.is_public %}btn-outline-danger{% else %}btn-success{% endif %} px-3">
+            <i class="bi {% if p.is_public %}bi-eye-slash{% else %}bi-eye{% endif %} me-1"></i>
+            {{ 'Remove from Showcase' if p.is_public else 'Add to Showcase' }}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-inbox display-1 text-muted opacity-25"></i>
+  <h4 class="mt-3 text-muted">No completed projects to showcase</h4>
+  <p class="text-muted">Once projects are marked as Completed, they will appear here to be showcased.</p>
+</div>
+{% endif %}
+{% endblock %}

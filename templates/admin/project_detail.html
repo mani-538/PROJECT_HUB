@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Manage Project: {{ project.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start mb-4">
+  <div>
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb mb-2" style="font-size:0.8rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.projects') }}" class="text-decoration-none">Projects</a></li>
+        <li class="breadcrumb-item active">{{ project.title }}</li>
+      </ol>
+    </nav>
+    <h1 class="mb-1 fw-bold">{{ project.title }}</h1>
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+      <span class="badge badge-{{ project.status }}">{{ project.status|title }}</span>
+      <span class="badge bg-light text-dark">{{ project.project_type|title }}</span>
+      <span class="badge" style="background:rgba(6,182,212,0.1);color:#0891b2;">{{ project.domain or 'No Domain' }}</span>
+      <span class="text-muted small ms-2">Submitted by: <strong>{{ project.owner.name or project.owner.username }}</strong> ({{ project.owner.department or 'N/A' }})</span>
+    </div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if project.github_link %}
+    <a href="{{ project.github_link }}" target="_blank" class="btn btn-dark btn-sm shadow-sm"><i class="bi bi-github me-1"></i>GitHub</a>
+    {% endif %}
+    <a href="{{ url_for('admin.projects') }}" class="btn btn-outline-secondary btn-sm shadow-sm">Back to List</a>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-md-8">
+    <!-- Meta Info Card -->
+    <div class="saas-card shadow-sm border-0 mb-4">
+      <h6 class="card-header-title fw-bold mb-3"><i class="fas fa-info-circle text-primary me-2"></i>Project Overview</h6>
+      <p class="text-muted" style="line-height:1.6;">{{ project.description or 'No description provided.' }}</p>
+      {% if project.problem_statement %}
+      <div class="mt-4 p-3 bg-light rounded" style="border-radius:12px;">
+        <div class="fw-bold text-dark small mb-2 text-uppercase" style="letter-spacing:0.5px;">Problem Statement</div>
+        <div class="text-muted small">{{ project.problem_statement }}</div>
+      </div>
+      {% endif %}
+      
+      {% if project.tech_stack %}
+      <div class="mt-4">
+        <div class="fw-bold text-dark small mb-2 text-uppercase" style="letter-spacing:0.5px;">Technologies Used</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for t in project.tech_stack.split(',') %}
+          <span class="badge bg-light text-primary border" style="border-radius:8px;">{{ t.strip() }}</span>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Admin Action Card -->
+    <div class="saas-card shadow-sm border-0 mb-4" style="border: 1px solid rgba(108, 92, 231, 0.2) !important; background: linear-gradient(145deg, #ffffff, #f8f9ff);">
+      <h6 class="card-header-title fw-bold mb-4 text-primary"><i class="fas fa-gavel me-2"></i>Process Evaluation</h6>
+      <form method="POST" action="{{ url_for('admin.project_action', project_id=project.id) }}">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Decision</label>
+            <select name="action" class="form-select border-0 bg-white shadow-sm py-2" style="border-radius:10px;" required>
+              <option value="" disabled selected>Choose Status...</option>
+              <option value="approve">Approve Project Submission</option>
+              <option value="reject">Reject Project Submission</option>
+              <option value="complete">Mark as Fully Completed</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold small">Score / Rating (1-5)</label>
+            <input type="number" name="rating" class="form-control border-0 bg-white shadow-sm py-2" style="border-radius:10px;" min="1" max="5" step="0.5" value="{{ project.rating or '' }}" placeholder="Enter rating...">
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold small">Evaluation Feedback</label>
+            <textarea name="feedback" class="form-control border-0 bg-white shadow-sm p-3" rows="3" style="border-radius:12px;" placeholder="What should the student know about this decision?">{{ project.admin_feedback or '' }}</textarea>
+          </div>
+          <div class="col-12 mt-4">
+            <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" style="border-radius:10px;">
+              <i class="fas fa-check-circle me-1"></i> Apply Decision & Notify Student
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Timeline of Updates -->
+    <div class="saas-card shadow-sm border-0 mb-0">
+      <h6 class="card-header-title fw-bold mb-4"><i class="fas fa-history text-primary me-2"></i>Student Progress History</h6>
+      {% if updates %}
+      <div class="timeline ps-3">
+        {% for u in updates %}
+        <div class="timeline-item mb-4 pb-1 border-start ps-4 position-relative" style="border-color: #e9ecef !important;">
+          <div class="position-absolute translate-middle-x" style="left:0; top:0; width:12px; height:12px; background:var(--primary); border-radius:50%; border:3px solid #fff; box-shadow:0 0 5px rgba(0,0,0,0.1);"></div>
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <span class="small text-muted fw-bold">{{ u.created_at.strftime('%d %b %Y, %I:%M %p') }}</span>
+          </div>
+          <div class="text-dark bg-light p-3 rounded shadow-sm" style="font-size:0.9rem; border-radius:10px !important;">{{ u.content }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4 fw-medium">No progress updates found for this project.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <!-- Student Profile Mini Card -->
+    <div class="saas-card shadow-sm border-0 mb-4 text-center py-4">
+        {% if project.owner.profile_image %}
+        <img src="{{ url_for('student.profile_image', filename=project.owner.profile_image) }}" class="rounded-circle mb-3 shadow-sm" style="width:80px;height:80px;object-fit:cover; border:3px solid #fff;" alt="avatar">
+        {% else %}
+        <div class="avatar-sm bg-primary text-white fs-2 mb-3 mx-auto shadow-sm" style="width:80px;height:80px; line-height:80px; border-radius:50%;">{{ project.owner.username[0].upper() }}</div>
+        {% endif %}
+        <h5 class="fw-bold mb-1">{{ project.owner.name or project.owner.username }}</h5>
+        <div class="text-muted small fw-medium mb-3">{{ project.owner.department }} - {{ project.owner.year }} Year</div>
+        <div class="d-grid px-3">
+            <a href="mailto:{{ project.owner.email }}" class="btn btn-light btn-sm text-primary fw-bold" style="border-radius:8px;"><i class="fas fa-envelope me-2"></i>Contact Student</a>
+        </div>
+    </div>
+
+    <!-- Versions / Assets Card -->
+    <div class="saas-card shadow-sm border-0">
+      <h6 class="card-header-title fw-bold mb-4"><i class="fas fa-file-download text-primary me-2"></i>Project Assets</h6>
+      {% if files %}
+      <div class="list-group list-group-flush">
+        {% for f in files %}
+        <div class="list-group-item bg-transparent border-0 px-0 mb-3 hover-bg-light rounded p-2" style="transition:0.2s;">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <span class="badge bg-primary px-2 py-1 mb-1" style="font-size:0.65rem;">v{{ f.version }}</span>
+                    <div class="fw-bold text-dark small" title="{{ f.filename }}">{{ f.filename[:25] }}{% if f.filename|length > 25 %}...{% endif %}</div>
+                </div>
+                <a href="{{ url_for('student.download_file', file_id=f.id) }}" class="btn btn-outline-primary btn-sm rounded-pill px-3" style="font-size:0.7rem;">
+                    <i class="fas fa-download"></i>
+                </a>
+            </div>
+            <div class="text-muted small opacity-75" style="font-size:0.7rem;">{{ f.description or 'Initial commit' }}</div>
+            <div class="text-muted mt-1" style="font-size:0.65rem;"><i class="far fa-clock me-1"></i>{{ f.uploaded_at.strftime('%d %b %Y') }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center text-muted py-4 fw-medium">No assets uploaded.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

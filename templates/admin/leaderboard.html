@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div class="text-center w-100 py-4" style="background:linear-gradient(135deg,rgba(245,158,11,0.1),rgba(239,68,68,0.1));border-radius:1rem;">
+    <i class="bi bi-trophy display-4 text-warning mb-3"></i>
+    <h1 class="fw-800" style="font-weight:800;">Student Leaderboard</h1>
+    <p class="text-muted">Top performers based on completed and approved projects.</p>
+  </div>
+</div>
+
+{% if board %}
+<div class="card p-0 overflow-hidden shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0 text-center">
+      <thead class="table-light">
+        <tr>
+          <th class="py-3 px-4 text-start">Rank</th>
+          <th class="py-3 px-4 text-start">Student</th>
+          <th class="py-3">Total Projects</th>
+          <th class="py-3">Approved</th>
+          <th class="py-3">Completed</th>
+          <th class="py-3 px-4 text-end">Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in board %}
+        <tr class="fade-in-up" style="animation-delay:{{ loop.index0 * 0.05 }}s; {% if loop.index <= 3 %}background:var(--card-bg-hover);{% endif %}">
+          <td class="px-4 text-start">
+            {% if loop.index == 1 %}<i class="bi bi-award-fill text-warning fs-4"></i>
+            {% elif loop.index == 2 %}<i class="bi bi-award-fill fs-4" style="color:#94a3b8;"></i>
+            {% elif loop.index == 3 %}<i class="bi bi-award-fill fs-4" style="color:#b45309;"></i>
+            {% else %}<span class="fw-700 text-muted ms-2">{{ loop.index }}</span>{% endif %}
+          </td>
+          <td class="px-4 text-start">
+            <div class="d-flex align-items-center gap-3">
+              <div class="avatar shadow-sm" style="width:40px;height:40px;font-size:1rem;{% if loop.index <= 3 %}border:2px solid var(--warning);{% endif %}">
+                {{ entry.user.username[0].upper() }}
+              </div>
+              <div>
+                <div class="fw-700" style="font-weight:700;">{{ entry.user.name or entry.user.username }}</div>
+                <div class="text-muted small">{{ entry.user.department or 'N/A' }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark">{{ entry.total }}</span></td>
+          <td><span class="badge bg-primary text-white">{{ entry.approved }}</span></td>
+          <td><span class="badge bg-success text-white">{{ entry.completed }}</span></td>
+          <td class="px-4 text-end">
+            <span class="fw-800 text-primary fs-5" style="font-weight:800;">{{ entry.score }}</span> pts
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-emoji-frown display-1 text-muted opacity-25"></i>
+  <h4 class="mt-3 text-muted">No students to rank yet.</h4>
+</div>
+{% endif %}
+{% endblock %}

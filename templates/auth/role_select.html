@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/auth-theme.css') }}" rel="stylesheet">
+<style>
+    .role-card i {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: #A29BFE;
+    }
+    .role-card h3 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .role-card p {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.7);
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+    .role-card ul {
+        padding-left: 0;
+        list-style: none;
+        margin-bottom: 1.5rem;
+        font-size: 0.8rem;
+        text-align: left;
+        width: 100%;
+    }
+    .role-card ul li {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-circle circle1"></div>
+<div class="bg-circle circle2"></div>
+<div class="bg-circle circle3"></div>
+
+<div class="d-flex flex-column justify-content-center align-items-center" style="min-height: calc(100vh - 8rem);">
+    <div class="text-center mb-4" style="position: relative; z-index: 10;">
+        <div class="logo-wrapper logo-large mb-2">
+            <div class="logo-symbol"><i class="fas fa-infinity"></i></div>
+            <div class="logo-text">Project Hub</div>
+        </div>
+        <p style="color:rgba(255,255,255,0.8); font-size:1.1rem; font-weight: 500;">
+            AI-Powered Student Project Management System
+        </p>
+    </div>
+
+    <div class="glass-card glass-card-wide fade-in-up">
+        <h3 class="mb-4 fw-bold">Select Your Role</h3>
+        
+        <div class="role-container">
+            <!-- Student Card -->
+            <a href="{{ url_for('auth.signup', role='student') }}" class="role-card">
+                <i class="fas fa-user-graduate"></i>
+                <h3>Student</h3>
+                <p>Manage your academic projects, collaborate with peers, and get AI-powered insights.</p>
+                <ul>
+                  <li><i class="fas fa-check-circle text-success"></i> Submit & track projects</li>
+                  <li><i class="fas fa-magic text-info"></i> AI suggestions & analysis</li>
+                  <li><i class="fas fa-award text-warning"></i> Earn certificates</li>
+                  <li><i class="fas fa-rocket text-primary"></i> Portfolio showcase</li>
+                </ul>
+                <div class="btn btn-primary w-100 fw-bold">Join as Student <i class="fas fa-arrow-right ms-2"></i></div>
+            </a>
+
+            <!-- Admin Card -->
+            <a href="{{ url_for('auth.signup', role='admin') }}" class="role-card">
+                <i class="fas fa-user-shield"></i>
+                <h3>Administrator</h3>
+                <p>Oversee all projects and users, approve work, and gain comprehensive analytics.</p>
+                <ul>
+                  <li><i class="fas fa-tasks text-success"></i> Full project oversight</li>
+                  <li><i class="fas fa-users-cog text-info"></i> User management</li>
+                  <li><i class="fas fa-chart-line text-warning"></i> Analytics dashboard</li>
+                  <li><i class="fas fa-file-pdf text-primary"></i> Reports & certificates</li>
+                </ul>
+                <div class="btn btn-outline-light w-100 fw-bold" style="border-radius:12px;">Join as Admin <i class="fas fa-arrow-right ms-2"></i></div>
+            </a>
+        </div>
+
+        <p class="text-center small mt-4 mb-0" style="color:rgba(255,255,255,0.7);">
+          Already have an account? <a href="{{ url_for('auth.login') }}" class="fw-bold">Sign In</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

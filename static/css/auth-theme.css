@@ -1,0 +1,196 @@
+/* Glassmorphism Auth Theme */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    overflow-y: auto;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+}
+
+/* Clean CSS Logo Component */
+.logo-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+    text-decoration: none !important;
+}
+
+.logo-symbol {
+    font-size: 2.2rem;
+    background: linear-gradient(135deg, #0cebeb, #20e3b2, #29ffc6);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.logo-text {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.logo-large {
+    flex-direction: column;
+}
+
+.logo-large .logo-symbol { font-size: 4rem; margin-bottom: 5px; }
+.logo-large .logo-text { font-size: 2.2rem; }
+
+/* Floating glow circles */
+.bg-circle {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.6;
+    z-index: 0;
+}
+
+.circle1 {
+    width: 200px;
+    height: 200px;
+    background: #a18cd1;
+    top: 20%;
+    left: 10%;
+}
+
+.circle2 {
+    width: 250px;
+    height: 250px;
+    background: #6dd5ed;
+    bottom: 15%;
+    left: 20%;
+}
+
+.circle3 {
+    width: 220px;
+    height: 220px;
+    background: #c471ed;
+    right: 15%;
+    top: 25%;
+}
+
+.glass-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+.glass-card-wide {
+    max-width: 600px;
+}
+
+.form-control {
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1) !important;
+    border: none;
+    color: white !important;
+    box-shadow: none !important;
+}
+
+.form-control::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.form-control:focus {
+    background: rgba(255,255,255,0.15) !important;
+    color: white !important;
+    box-shadow: 0 0 0 2px rgba(162, 155, 254, 0.5) !important;
+}
+
+.btn-primary {
+    border-radius: 12px;
+    background: linear-gradient(135deg, #6C5CE7, #A29BFE);
+    border: none;
+    transition: 0.3s ease;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #5b4cc6, #8f85ff);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+}
+
+.role-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+}
+
+.role-card {
+    padding: 30px 20px;
+    border-radius: 15px;
+    background: rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: 0.3s ease;
+    color: white;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.role-card:hover {
+    background: #6C5CE7;
+    transform: translateY(-5px);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+}
+
+.form-label {
+    text-align: left;
+    display: block;
+    color: rgba(255,255,255,0.9);
+    font-weight: 500;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+}
+
+.input-group-text {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: rgba(255,255,255,0.7);
+    border-radius: 12px 0 0 12px;
+}
+
+.input-group .form-control {
+    border-radius: 0 12px 12px 0;
+}
+
+a {
+    color: #6dd5ed;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+a:hover {
+    color: #c471ed;
+}
+
+@media (max-width: 576px) {
+    .role-container {
+        flex-direction: column;
+    }
+    body {
+        overflow-y: auto;
+    }
+    .glass-card {
+        margin: 20px;
+    }
+}

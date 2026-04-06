@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Complete Your Profile{% endblock %}
+
+{% block extra_css %}
+<link href="{{ url_for('static', filename='css/auth-theme.css') }}" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(135deg, #0f2027, #203a43, #2c5364) !important;
+        color: white !important;
+    }
+    .profile-setup-wrapper {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 40px 20px;
+        position: relative;
+        overflow: hidden;
+    }
+    .glass-card-setup {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        width: 100%;
+        max-width: 650px;
+        position: relative;
+        z-index: 2;
+    }
+    .form-control, .form-select, textarea {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border-radius: 10px !important;
+    }
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5) !important;
+    }
+    .form-select {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 0.75rem center !important;
+        background-size: 16px 12px !important;
+        padding-right: 2.5rem !important;
+    }
+    .form-select option {
+        background-color: #203a43;
+        color: white;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #6C5CE7, #A29BFE) !important;
+        border-radius: 10px !important;
+        border: none !important;
+        color: white !important;
+        font-weight: 600;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+    }
+    .form-label {
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .logo-container {
+        text-align: center;
+        margin-bottom: 25px;
+    }
+    .bg-circle {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(60px);
+        opacity: 0.5;
+        z-index: 1;
+    }
+    .circle-1 { width: 300px; height: 300px; background: #6C5CE7; top: -100px; left: -100px; }
+    .circle-2 { width: 250px; height: 250px; background: #00d2ff; bottom: -50px; right: -50px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-setup-wrapper">
+  <!-- Blurred Circles -->
+  <div class="bg-circle circle-1"></div>
+  <div class="bg-circle circle-2"></div>
+
+  <div class="glass-card-setup animate__animated animate__fadeInUp">
+    <!-- Updated CSS Logo to match Login Page -->
+    <div class="logo-container">
+        <div class="logo-wrapper logo-large mb-3">
+            <div class="logo-symbol"><i class="fas fa-infinity"></i></div>
+            <div class="logo-text">Project Hub</div>
+        </div>
+        <p class="text-light opacity-75 small">Complete Your Profile - Tell us more about yourself</p>
+    </div>
+
+    <form method="POST">
+      <div class="row g-4">
+        <!-- Name -->
+        <div class="col-12">
+          <label class="form-label">Full Name</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Ravi Kumar" required autofocus>
+        </div>
+
+        <!-- Mobile & DOB -->
+        <div class="col-md-6">
+          <label class="form-label">Mobile Number</label>
+          <input type="tel" name="mobile" class="form-control" placeholder="+91 98765 43210">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Date of Birth</label>
+          <input type="date" name="dob" class="form-control">
+        </div>
+
+        <!-- College -->
+        <div class="col-12">
+          <label class="form-label">College / University</label>
+          <input type="text" name="college" class="form-control" placeholder="Your institution name">
+        </div>
+
+        <!-- Conditional Field 1: Department / Role -->
+        <div class="col-md-6">
+          {% if user.role == 'admin' %}
+            <label class="form-label">Role</label>
+            <select name="department" class="form-select">
+              <option value="">Select Role</option>
+              <option>Placement Officer</option>
+              <option>Faculty</option>
+              <option>Project Coordinator</option>
+            </select>
+          {% else %}
+            <label class="form-label">Department</label>
+            <select name="department" class="form-select">
+              <option value="">Select Department</option>
+              <option>CSE</option><option>IT</option><option>ECE</option>
+              <option>EEE</option><option>MECH</option><option>CIVIL</option>
+              <option>MBA</option><option>MCA</option><option>Other</option>
+            </select>
+          {% endif %}
+        </div>
+
+        <!-- Conditional Field 2: Year of Study / Experience -->
+        <div class="col-md-6">
+          {% if user.role == 'admin' %}
+            <label class="form-label">Experience</label>
+            <select name="year" class="form-select">
+              <option value="">Select Experience</option>
+              <option>0–1 Years</option>
+              <option>1–3 Years</option>
+              <option>3–5 Years</option>
+              <option>5+ Years</option>
+            </select>
+          {% else %}
+            <label class="form-label">Year of Study</label>
+            <select name="year" class="form-select">
+              <option value="">Select Year</option>
+              <option>1st Year</option><option>2nd Year</option>
+              <option>3rd Year</option><option>4th Year</option><option>PG</option>
+            </select>
+          {% endif %}
+        </div>
+
+        <!-- Bio -->
+        <div class="col-12">
+          <label class="form-label">Short Bio <span class="text-white opacity-50 fw-normal">(optional)</span></label>
+          <textarea name="bio" class="form-control" rows="3" placeholder="Tell us about your professional background or interests..."></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="col-12 pt-2">
+          <button type="submit" class="btn btn-submit w-100 py-3">
+            <i class="bi bi-check-circle me-2"></i>Save & Finish Setup
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
