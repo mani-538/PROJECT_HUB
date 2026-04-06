@@ -20,7 +20,7 @@ Project Hub is an AI-powered student project management platform designed to str
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/PROJECT_HUB.git
+   git clone https://github.com/mani-538/PROJECT_HUB.git
    cd PROJECT_HUB
    ```
 
