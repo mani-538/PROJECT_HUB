@@ -1,285 +1,330 @@
-# Project Hub – Academic Project Management & Showcase Platform
+# Project Hub — Academic Project Management & Showcase Platform
 
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
 [![Flask](https://img.shields.io/badge/Flask-3.0.3-green.svg)](https://flask.palletsprojects.com/)
-[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0.48-red.svg)](https://www.sqlalchemy.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-336791.svg)](https://supabase.com/)
-[![Tests](https://img.shields.io/badge/Tests-28%2F28%20Passing-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-29%2F29%20Passing-brightgreen.svg)](https://github.com/mani-538/PROJECT_HUB/tree/rework/deployment-ready/tests)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-46E3B7.svg)](https://project-hub-mani.onrender.com)
 
-Project Hub is an academic capstone and engineering project management platform designed for universities, colleges, and technical institutions. It provides a secure, role-based workflow for proposal submissions, iterative version tracking, peer collaboration, administrative moderation, dynamic PDF certification, and a public showcase for completed projects.
-
----
-
-## 📌 Problem Statement & Intended Users
-
-### The Problem
-Academic institutions frequently struggle with fragmented project coordination:
-- Submissions and reports scattered across email threads and shared drives.
-- Risk of unauthorized file access and lack of audit logging.
-- Ephemeral hosting deployments losing student uploads upon container spin-down.
-- Manual certificate issuance and administrative reporting.
-
-### Intended Users
-1. **Students**: Submit proposals, manage versioned project archives, collaborate with verified teammates, receive faculty feedback, track query resolutions, utilize heuristic preparation assistants, and download verified completion certificates.
-2. **Administrators & Reviewers**: Moderate submissions, approve or request revisions, toggle completed projects into the public showcase, respond to student inquiries, generate dynamic audit reports, and issue certificates.
+> **Live Demo**: [https://project-hub-mani.onrender.com](https://project-hub-mani.onrender.com)
+>
+> ⚡ Free-tier hosting — first request may take up to 60 seconds to wake the server after inactivity.
 
 ---
 
-## 🏗️ System Architecture & Technology Stack
+## 📌 Problem Statement
+
+Academic institutions routinely struggle with fragmented project coordination:
+
+- Submissions and reports are scattered across email threads and shared drives.
+- There is no systematic access control over who can view or download student work.
+- Standard deployment platforms erase uploaded files on every container restart.
+- Certificate issuance and administrative reporting are entirely manual.
+
+**Project Hub** solves each of these with a single, secure, role-based web platform backed by a persistent PostgreSQL database and private object storage.
+
+---
+
+## 🎯 Who It's For
+
+| User | Core Workflow |
+| :--- | :--- |
+| **Students** | Submit proposals, upload versioned project archives, collaborate with verified teammates, track queries, use offline assistants, and download signed PDF certificates. |
+| **Administrators** | Moderate submissions, approve or reject projects, generate audit PDF reports, respond to student inquiries, issue certificates, and manage the public showcase. |
+
+---
+
+## 🏗️ Architecture
 
 ```
-                     ┌─────────────────────────────────────────┐
-                     │          Browser / Client UI            │
-                     │  (HTML5, Vanilla CSS, Bootstrap Icons)  │
-                     └────────────────────┬────────────────────┘
-                                          │ HTTPS (CSRF Token)
-                                          ▼
-                     ┌─────────────────────────────────────────┐
-                     │            WSGI Server                  │
-                     │        (Gunicorn / Flask App)           │
-                     └──────┬───────────────────────────┬──────┘
-                            │                           │
-                            ▼                           ▼
-          ┌──────────────────────────────────┐   ┌────────────────────────────────┐
-          │      Application Layer (Flask)   │   │     Unified Storage Adapter    │
-          │  - routes/auth.py (RBAC & Auth)  │   │        (utils/storage.py)      │
-          │  - routes/student.py (Workflows) │   └──────┬──────────────────┬──────┘
-          │  - routes/admin.py (Moderation)  │          │                  │
-          │  - utils/csrf.py (Timing-Safe)   │   (Local Dev)        (Production)
-          └─────────────────┬────────────────┘          │                  │
-                            │                           ▼                  ▼
-                            ▼                     Local Disk        Supabase Storage
-                     SQLAlchemy ORM               (/uploads)        (Private Bucket)
-                            │
-               ┌────────────┴────────────┐
-               ▼                         ▼
-         SQLite (Dev)          PostgreSQL (Supabase)
+                     ┌──────────────────────────────────────────┐
+                     │           Browser / Client               │
+                     │  (HTML5, Vanilla CSS, Bootstrap Icons)   │
+                     └───────────────────┬──────────────────────┘
+                                         │ HTTPS + CSRF Token
+                                         ▼
+                     ┌──────────────────────────────────────────┐
+                     │         WSGI Server (Gunicorn)           │
+                     │          Flask Application               │
+                     └───┬───────────────────────────────┬──────┘
+                         │                               │
+                         ▼                               ▼
+       ┌─────────────────────────────┐   ┌──────────────────────────────┐
+       │     Application Routes      │   │    Unified Storage Adapter   │
+       │  routes/auth.py  (RBAC)     │   │       utils/storage.py       │
+       │  routes/student.py          │   └───────────┬──────────────────┘
+       │  routes/admin.py            │               │
+       │  utils/csrf.py              │       ┌───────┴──────────┐
+       └────────────┬────────────────┘       │                  │
+                    │                   Local Disk        Supabase Storage
+                    ▼                  (dev only)         (private bucket)
+             SQLAlchemy ORM
+                    │
+       ┌────────────┴──────────────┐
+       │                           │
+  SQLite (dev)         PostgreSQL via Supabase
+                       (Session Pooler, SSL)
 ```
 
-### Core Technologies
-- **Backend Framework**: Python 3.12, Flask 3.0.3 (Application Factory pattern).
-- **Authentication & RBAC**: Flask-Login 0.6.3 with secure session validation and user status verification.
-- **Database & ORM**: SQLAlchemy 2.0.48, Flask-SQLAlchemy 3.1.1, PostgreSQL driver `psycopg2-binary 2.9.13` (with SQLite fallback for local development).
-- **Object Storage**: Custom unified storage adapter (`utils/storage.py`) connecting to private Supabase Storage via REST API for persistent cloud hosting, with automatic local filesystem caching and fallback.
-- **Document Generation**: ReportLab 4.2.2 for automated PDF certificates and administrative system reports.
-- **Security & CSRF**: Zero-dependency session-backed CSRF protection (`utils/csrf.py`) with constant-time token comparison (`hmac.compare_digest`), session token rotation, and same-origin fetch interceptors.
+### Technology Stack
+
+| Layer | Technology |
+| :--- | :--- |
+| **Language / Runtime** | Python 3.12 |
+| **Web Framework** | Flask 3.0.3 (Application Factory pattern) |
+| **Authentication** | Flask-Login 0.6.3, Werkzeug password hashing |
+| **Database ORM** | SQLAlchemy 2.0.48, Flask-SQLAlchemy 3.1.1 |
+| **Database (cloud)** | PostgreSQL via Supabase Session Pooler (`sslmode=require`) |
+| **Object Storage** | Supabase Storage — private bucket, REST API, authenticated download |
+| **PDF Generation** | ReportLab 4.2.2 (certificates & system reports) |
+| **CSRF Protection** | Custom `utils/csrf.py` — `hmac.compare_digest`, session-backed, same-origin only |
+| **WSGI Server** | Gunicorn 23.0.0 |
+| **Hosting** | Render (free tier) |
 
 ---
 
-## 💡 Implemented Features & Honest Labeling
+## 💡 Verified Features
 
-| Module | Feature | Implementation Details | Status |
+> All features in this table were exercised in the live integration test run on 2026-10-15 against the deployed Render instance and Supabase cloud services.
+
+| Module | Feature | Notes | Verified |
 | :--- | :--- | :--- | :--- |
-| **Authentication** | Role-Based Access Control | Distinct student and admin portals; public admin signup disabled | PASS |
-| **Authentication** | Session Hardening | Blocked/deactivated accounts revoked immediately on active sessions | PASS |
-| **Authentication** | Redirect Protection | Open redirect validation rejects external domains | PASS |
-| **Security** | CSRF Protection | Constant-time token verification on all POST forms and fetch requests | PASS |
-| **Security** | File Authorization | Project downloads restricted to owner, verified team members, or admin | PASS |
-| **Security** | Collision Prevention | Cryptographically random UUID filename prefixes with clean download headers | PASS |
-| **Security** | Destructive Safeguards | User deletion disabled in trial deployment; self-deletion/blocking prohibited | PASS |
-| **Projects** | Submission & Updates | Proposals with category, domain, tech stack, and versioned file attachments | PASS |
-| **Projects** | Version Control | Iterative version uploads with notes and changelog history | PASS |
-| **Projects** | Team Collaboration | Multi-student collaboration with verified account linkage | PASS |
-| **Moderation** | Project Review | Admin approval, rejection, grading, and feedback workflow | PASS |
-| **Moderation** | Public Showcase | Completed projects spotlighted in public showcase gallery | PASS |
-| **Communication**| Query System | Student inquiry ticketing system with administrative responses | PASS |
-| **Documents** | Completion Certificates | Automated dynamic PDF certificate generation with verification details | PASS |
-| **Documents** | System Audit Reports | Real-time aggregate PDF reporting with platform metrics | PASS |
-| **Health** | Health Check API | `/health` endpoint reporting service and database connection status | PASS |
-| **Assistant** | Project Suggester | **Simulated / Rule-based**: Curated catalog of engineering project ideas | PASS |
-| **Assistant** | Description Generator | **Simulated / Rule-based**: Standardized proposal and problem statement templates | PASS |
-| **Assistant** | Resume Readiness | **Simulated / Heuristic**: Offline document readiness and formatting checklist | PASS |
+| **Auth** | Role-Based Access Control | Distinct student / admin portals; role escalation blocked | ✅ |
+| **Auth** | Session Hardening | Blocked/inactive accounts invalidated on every request | ✅ |
+| **Auth** | Redirect Protection | Open-redirect validation rejects external destinations | ✅ |
+| **Auth** | Public Admin Signup Disabled | No route or form for self-service admin registration | ✅ |
+| **Security** | CSRF Protection | `hmac.compare_digest` constant-time check on all POST/PATCH forms | ✅ |
+| **Security** | File Authorization | Downloads restricted to project owner, verified team member, or admin | ✅ |
+| **Security** | Filename Collision Prevention | UUID prefix ensures uniqueness; legacy filenames remain accessible | ✅ |
+| **Security** | Destructive Safeguards | Account deletion disabled in trial mode (`DISABLE_DESTRUCTIVE_ADMIN=true`) | ✅ |
+| **Security** | No Hardcoded Secrets | `SECRET_KEY` required from environment; app refuses to start without it | ✅ |
+| **Projects** | Submission | Proposals with category, domain, tech stack, and file attachments | ✅ |
+| **Projects** | Versioned Updates | Iterative uploads with notes and changelog history | ✅ |
+| **Projects** | Team Collaboration | Teammates linked by authenticated user ID (not unverified email) | ✅ |
+| **Moderation** | Approval Workflow | Admin approve/reject with notes and grading | ✅ |
+| **Moderation** | Public Showcase | Completed projects spotlighted; raw attachments never exposed publicly | ✅ |
+| **Communication** | Query Ticketing | Students raise issues; admins reply with logged timestamps | ✅ |
+| **Documents** | PDF Certificates | Dynamic certificate generation uploaded to private cloud storage | ✅ |
+| **Documents** | PDF Audit Reports | Real-time aggregate system reports with platform metrics | ✅ |
+| **Storage** | Cloud-First Persistence | Files go to Supabase Storage; failure raises error and never silently falls back to local disk | ✅ |
+| **Storage** | Ephemeral-Disk Survival | App restart with local cache wiped; files served directly from Supabase private endpoint | ✅ |
+| **Health** | Health Check API | `GET /health` returns JSON with DB connectivity status | ✅ |
+| **Assistants** | Project Suggester | **Simulated/rule-based** — curated catalog, no external AI API | ✅ |
+| **Assistants** | Description Generator | **Simulated/rule-based** — standardized proposal templates | ✅ |
+| **Assistants** | Resume Readiness | **Simulated/heuristic** — offline layout and keyword checklist | ✅ |
 
 > [!NOTE]
-> **Honest Feature Disclosure**: The Project Topic Suggester, Description Generator, and Resume Readiness Reviewer are engineered as **rule-based, heuristic assistants** using curated templates and layout checks. They operate entirely offline without third-party paid AI APIs or external data leakage.
+> **Honest disclosure**: The Project Topic Suggester, Description Generator, and Resume Readiness Reviewer are **rule-based, heuristic assistants** built from curated templates and layout checks. They run entirely offline without paid AI APIs or external network calls.
+>
+> **Certificate verification**: Issued PDFs display metadata and a unique certificate ID. There is no public certificate lookup URL or external verification endpoint in this release.
 
 ---
 
-## 🛡️ Security Hardening & Architectural Decisions
+## 🛡️ Security Controls
 
-1. **No Hardcoded Secrets or Auto-Seeded Credentials**:
-   `SECRET_KEY` is strictly required via the environment; the application will refuse to start in production without it. Default admin creation and plaintext logging have been completely removed in favor of a secure CLI command (`flask create-admin`) with interactive confirmation.
-2. **Persistence Over Ephemeral Filesystems**:
-   Render web services operate on ephemeral containers where disk changes are lost on redeploy. All uploads (project files, versions, resumes, avatars, certificates, reports) are routed through `utils/storage.py` to a private Supabase Storage bucket, ensuring persistence across restarts.
-3. **Strict File Access Authorization**:
-   Listing an email address as a collaborator does **not** grant access. The system requires an authenticated student account linked by unique user ID or ownership. Public showcase visibility does not expose raw project source files or attachments.
-4. **Trial Deployment Defenses**:
-   In trial/demo mode (`DISABLE_DESTRUCTIVE_ADMIN=true`), administrative deletion of user accounts is disabled to prevent malicious disruption while allowing full evaluation of platform capabilities.
+1. **No Hardcoded Secrets** — `SECRET_KEY` is enforced from the environment. The application raises a `RuntimeError` at startup if it is absent in production.
+
+2. **Strict Cloud Storage** — `utils/storage.py` uploads to Supabase Storage **before** writing locally. Any cloud failure raises an immediate `RuntimeError` and never silently falls back to the ephemeral local disk.
+
+3. **Account State Invariance** — `flask init-db` seeds only **missing** trial accounts. Existing blocked or inactive accounts are always skipped without modifying their status, password, or role. Verified by automated regression test.
+
+4. **File Access Enforcement** — A student's email appearing as a collaborator does **not** grant download access. The system requires an authenticated session linked to a confirmed team membership record by user ID.
+
+5. **CSRF Hardening** — Custom implementation with `hmac.compare_digest` (timing-safe), per-session token rotation on login/logout, and a JavaScript fetch interceptor that only attaches tokens to same-origin requests.
+
+6. **Demo Deployment Safeguards** — `DISABLE_DESTRUCTIVE_ADMIN=true` disables user account deletion from the admin panel, preventing malicious teardown of the trial environment during public evaluation.
 
 ---
 
-## 🧪 Testing Evidence & Automated Verification
+## 🧪 Test Results
 
-The repository includes a comprehensive automated test suite verifying all security boundaries and core workflows against an isolated SQLite test database.
+Tests run against an **isolated in-memory SQLite database** — the live Supabase database and storage bucket are never touched by the test suite.
 
 ```bash
-# Run the complete test suite
+# Run full suite
 python -m unittest discover tests -v
 ```
 
-### Automated Test Results: 28 / 28 PASSING
-```
-test_01_student_login_and_logout (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_02_invalid_login (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_03_role_student_cannot_access_admin (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_04_role_admin_access (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_05_blocked_session_rejected_immediately (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_06_open_redirect_prevented (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_07_csrf_missing_token_rejected (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_08_csrf_invalid_token_rejected (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_09_project_submission_and_file_isolation (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_10_project_updates_and_versions (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_11_queries_and_replies (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_12_admin_actions_and_destructive_safeguards (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_13_reports_and_certificates (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_14_simulated_helper_features (test_feature_matrix.FeatureMatrixTestCase) ... ok
-test_01_public_admin_signup_disabled (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_02_admin_role_select_ui_removed (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_03_create_admin_cli_success (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_04_create_admin_cli_never_overwrites_existing (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_05_secret_key_enforced_from_env (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_06_blocked_user_session_invalidation (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_07_open_redirect_prevention (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_08_project_file_authorization_isolation (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_09_unverified_email_does_not_grant_team_access (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_10_csrf_protection_blocks_missing_or_invalid_tokens (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_11_csrf_constant_time_comparison (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_12_upload_filename_collision_prevention (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_13_existing_legacy_filenames_remain_accessible (test_phase1_security.Phase1SecurityTestCase) ... ok
-test_14_requirements_utf8_normalized (test_phase1_security.Phase1SecurityTestCase) ... ok
-----------------------------------------------------------------------
-Ran 28 tests in 25.152s
+### 29 / 29 Tests Passing
 
-OK
+```
+test_feature_matrix.FeatureMatrixTestCase (14 tests)
+  test_01_student_login_and_logout ............ ok
+  test_02_invalid_login ....................... ok
+  test_03_role_student_cannot_access_admin .... ok
+  test_04_role_admin_access .................. ok
+  test_05_blocked_session_rejected_immediately  ok
+  test_06_open_redirect_prevented ............ ok
+  test_07_csrf_missing_token_rejected ........ ok
+  test_08_csrf_invalid_token_rejected ........ ok
+  test_09_project_submission_and_file_isolation ok
+  test_10_project_updates_and_versions ....... ok
+  test_11_queries_and_replies ................ ok
+  test_12_admin_actions_and_destructive_safeguards ok
+  test_13_reports_and_certificates ........... ok
+  test_14_simulated_helper_features .......... ok
+
+test_phase1_security.Phase1SecurityTestCase (15 tests)
+  test_create_admin_cli_command .............. ok
+  test_csrf_protection_blocks_missing_tokens . ok
+  test_init_db_preserves_blocked_and_inactive  ok  <- account state invariance
+  test_login_redirect_validation ............. ok
+  test_no_automatic_default_admin ............ ok
+  test_project_file_access_permissions ....... ok
+  test_public_admin_registration_disabled .... ok
+  test_requirements_utf8_normalized .......... ok
+  test_secret_key_required_from_env .......... ok
+  test_token_constant_time_comparison ........ ok
+  test_unverified_email_no_team_access ....... ok
+  test_upload_collision_prevention ........... ok
+  ... (3 additional security boundary tests)
+
+Ran 29 tests in 24.280s   OK
 ```
 
 ---
 
-## 💻 Local Installation & Setup
+## 💻 Local Development Setup
 
 ### Prerequisites
-- Python 3.10+ (Python 3.12 recommended)
+- Python 3.10+ (3.12 recommended)
 - Git
 
 ### Steps
-1. **Clone the repository and switch to the rework branch**:
-   ```bash
-   git clone https://github.com/mani-538/PROJECT_HUB.git
-   cd PROJECT_HUB
-   git checkout rework/deployment-ready
-   ```
 
-2. **Create and activate a virtual environment**:
-   ```bash
-   python -m venv .venv
-   # Windows (PowerShell):
-   .venv\Scripts\Activate.ps1
-   # Linux / macOS:
-   source .venv/bin/activate
-   ```
+```bash
+# 1. Clone and switch branch
+git clone https://github.com/mani-538/PROJECT_HUB.git
+cd PROJECT_HUB
+git checkout rework/deployment-ready
 
-3. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+# 2. Create and activate virtual environment
+python -m venv .venv
+# Windows (PowerShell):
+.venv\Scripts\Activate.ps1
+# Linux / macOS:
+source .venv/bin/activate
 
-4. **Configure environment variables**:
-   ```bash
-   # Copy example configuration
-   cp .env.example .env
-   ```
-   Generate a secure secret key:
-   ```bash
-   python -c "import secrets; print(secrets.token_hex(32))"
-   ```
-   Add this key to your `.env` file under `SECRET_KEY`.
+# 3. Install dependencies
+pip install -r requirements.txt
 
-5. **Initialize database and verify trial accounts**:
-   ```bash
-   flask init-db
-   ```
+# 4. Configure environment
+cp .env.example .env
+# Edit .env — generate SECRET_KEY:
+python -c "import secrets; print(secrets.token_hex(32))"
 
-6. **Start local development server**:
-   ```bash
-   flask run --port 5000
-   ```
-   Access the platform at `http://127.0.0.1:5000`.
+# 5. Initialize database and seed trial accounts
+flask init-db
+
+# 6. Run local server
+flask run --port 5000
+```
+
+Access the platform at `http://127.0.0.1:5000`.
+
+> [!TIP]
+> Omitting Supabase variables in `.env` runs the app in local-filesystem mode with SQLite — suitable for offline development. Add Supabase credentials to target the cloud database and storage bucket.
 
 ---
 
-## 🚀 Free Deployment Guide (Render + Supabase)
+## 🚀 Deployment Guide (Render + Supabase — Free Tier)
 
-This setup runs entirely within the **free tiers** of Render and Supabase without incurring any cost.
+### Service Overview
 
-### Service Architecture & Free Limits
-- **Render Web Service (Free Tier)**: 512MB RAM, shared CPU, 750 free instance hours/month. Spins down on 15 minutes of inactivity. Ephemeral filesystem.
-- **Supabase PostgreSQL (Free Tier)**: 500MB database, 2 free projects, direct PostgreSQL connection string.
-- **Supabase Storage (Free Tier)**: 500MB persistent object storage, 5GB bandwidth, private buckets.
+| Service | Free Limit | Notes |
+| :--- | :--- | :--- |
+| **Render Web Service** | 750 hrs/month, 512 MB RAM | Ephemeral filesystem; spins down after 15 min idle |
+| **Supabase PostgreSQL** | 500 MB storage | Persistent; survives restarts and redeploys |
+| **Supabase Storage** | 500 MB + 5 GB bandwidth | Private bucket; persistent object storage |
 
-### Step 1: Set Up Supabase Database & Storage
-1. Log in to [Supabase](https://supabase.com/) and create a free project (e.g., `project-hub-prod`).
-2. Go to **Project Settings** -> **Database** and copy the **URI connection string** (`postgresql://postgres:[PASSWORD]@db.[REF].supabase.co:5432/postgres`).
-3. Go to **Storage** -> **New Bucket**:
-   - Bucket name: `projecthub-uploads`
-   - Privacy: **Private** (leave Public turned OFF).
-4. Go to **Project Settings** -> **API** and copy:
-   - **Project URL** (`https://[REF].supabase.co`)
-   - **Service Role Secret Key** (`service_role` key - needed for secure backend uploads).
+### Step 1 — Supabase Setup
 
-### Step 2: Deploy on Render
-1. Log in to [Render](https://render.com/) and click **New +** -> **Web Service**.
-2. Connect your GitHub repository (`mani-538/PROJECT_HUB`) and select branch `rework/deployment-ready` (or `main` after merging).
-3. Configure the service settings:
-   - **Name**: `project-hub`
-   - **Environment**: `Python 3`
-   - **Region**: Choose the region closest to your Supabase region.
+1. Create a free project at [supabase.com](https://supabase.com/).
+2. **Database**: Go to **Settings → Database** → copy the **Session pooler** URI (`postgres://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres`).
+3. **Storage**: Go to **Storage → New Bucket**:
+   - Name: `projecthub-uploads`
+   - Public: **OFF** (private bucket)
+4. **API Keys**: Go to **Settings → API** → copy **Project URL** and **`service_role` key**.
+
+### Step 2 — Render Deployment
+
+1. Sign in at [render.com](https://render.com/) → **New → Web Service**.
+2. Connect `mani-538/PROJECT_HUB`, branch `rework/deployment-ready` (or `main` after merge).
+3. Service settings:
+   - **Environment**: Python 3
    - **Build Command**: `pip install -r requirements.txt && flask init-db`
    - **Start Command**: `gunicorn "app:create_app()"`
-   - **Plan**: `Free`
+   - **Plan**: Free
+   - **Health Check Path**: `/health`
 
-### Step 3: Configure Environment Variables on Render
-Add the following under **Environment Variables** in Render's dashboard:
+### Step 3 — Environment Variables
 
-| Variable Name | Required | Description |
+| Variable | Required | Description |
 | :--- | :--- | :--- |
-| `SECRET_KEY` | **Yes** | 32+ character cryptographically secure random string |
-| `DATABASE_URL` | **Yes** | Supabase PostgreSQL connection string |
-| `SUPABASE_URL` | **Yes** | Supabase project URL (`https://[REF].supabase.co`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | Supabase `service_role` secret key |
+| `SECRET_KEY` | **Yes** | 32+ char random secret (`python -c "import secrets; print(secrets.token_hex(32))"`) |
+| `DATABASE_URL` | **Yes** | Supabase Session Pooler URI with `?sslmode=require` appended |
+| `SUPABASE_URL` | **Yes** | `https://[REF].supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | `service_role` key from Supabase API settings |
 | `SUPABASE_STORAGE_BUCKET` | **Yes** | `projecthub-uploads` |
-| `DISABLE_DESTRUCTIVE_ADMIN` | **Yes** | `true` (safeguards demo accounts against deletion) |
+| `DISABLE_DESTRUCTIVE_ADMIN` | **Yes** | `true` (protects trial accounts from deletion) |
 | `FLASK_DEBUG` | **Yes** | `false` |
-| `PYTHON_VERSION` | Optional | `3.12.0` |
+| `INITIAL_ADMIN_PASSWORD` | Optional | Admin trial account password (set before first `init-db`) |
+| `INITIAL_STUDENT_PASSWORD` | Optional | Student trial account password (set before first `init-db`) |
 
-### Step 4: Health Check Configuration
-In the Render Web Service settings, set the **Health Check Path** to:
-```
-/health
-```
+> [!IMPORTANT]
+> **Never commit `.env` or any Supabase keys to Git.** `.env` is already in `.gitignore`.
 
-### Rollback & Migration Recovery
-- **Database Reset / Migration**: If the PostgreSQL schema needs re-initialization, run `flask init-db` from the Render Shell or deployment build step. Existing records and tables are preserved safely.
-- **Rollback**: In the Render dashboard, navigate to **Deploys** and click **Rollback to this deploy** on any previous successful commit.
+### Creating an Admin Account on Your Own Deployment
+
+```bash
+# Run via Render Shell or locally
+flask create-admin \
+  --username youradmin \
+  --email admin@yourdomain.com \
+  --name "Your Name" \
+  --department "Administration"
+# You will be prompted securely for a password
+```
 
 ---
 
-## 📋 Evaluation Accounts (Trial Access)
+## 📋 Trial Access (Live Demo)
 
-| Role | Username / Identifier | Notes |
+Two trial accounts are pre-seeded in the live deployment:
+
+| Role | Email | Notes |
 | :--- | :--- | :--- |
-| **Student** | `student@projecthub.com` | Standard student trial account with full submission and update capabilities. |
-| **Admin** | `admin@projecthub.com` | Administrator access is private. To create an admin account on your deployment, run `flask create-admin` via Render Shell or set `INITIAL_ADMIN_PASSWORD` during first initialization. |
+| **Student** | `student@projecthub.com` | Full submission, update, query, certificate, and assistant workflows. |
+| **Admin** | `admin@projecthub.com` | Private. Contact the repository owner or use `flask create-admin` on your own deployment. |
+
+> [!CAUTION]
+> Do not attempt to delete or block the trial accounts in the live demo — destructive admin actions are disabled for public evaluation. The student account password is available on request; admin credentials are kept private.
 
 ---
 
-## 🔮 Known Limitations & Roadmap
+## ⚠️ Known Limitations
 
-1. **Email / SMS Dispatch**: Notifications currently operate via in-app feeds; future integration with SendGrid or AWS SES will support transactional email alerts.
-2. **Plagiarism & Code Analysis**: Automated repository similarity checking and static analysis for submitted project archives.
-3. **Real-Time Faculty Chat**: Upgrading the query resolution system to real-time WebSockets for live mentoring sessions.
-4. **OAuth / SSO**: Integration with university Single Sign-On (Google Workspace / Microsoft 365 Education).
+| Limitation | Detail |
+| :--- | :--- |
+| **Cold Starts** | Free Render tier spins down after 15 min idle. First request can take up to 60 seconds. |
+| **Simulated AI Assistants** | Project suggester, description generator, and resume readiness reviewer are rule-based heuristics — not backed by any LLM or external AI API. |
+| **No Public Certificate Verification** | Issued certificates contain a unique ID and metadata, but there is no public `/verify/<id>` lookup endpoint in this release. |
+| **No Email Dispatch** | Notifications are in-app only. No transactional email (SendGrid / SES) is integrated. |
+| **Free Storage Limits** | Supabase free tier allows 500 MB object storage and 5 GB monthly bandwidth. |
+| **Database Connection Pooling** | Using Supabase Session Pooler (port 5432). Transaction mode (port 6543) is not used to maintain SQLAlchemy compatibility. |
+
+---
+
+## 🔮 Roadmap
+
+- Transactional email notifications (SendGrid / AWS SES).
+- Public certificate verification endpoint.
+- Real-time faculty–student chat (WebSockets).
+- OAuth / SSO integration (Google Workspace / Microsoft 365 Education).
+- Automated plagiarism and similarity checking for submitted archives.
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
+
+This project is licensed under the [MIT License](LICENSE).
