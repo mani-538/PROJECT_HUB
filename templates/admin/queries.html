@@ -36,6 +36,7 @@
 
       {% if q.status == 'open' %}
       <form method="POST" action="{{ url_for('admin.reply_query', query_id=q.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="input-group">
           <input type="text" name="reply" class="form-control" placeholder="Type your reply to the student..." required>
           <button class="btn btn-primary px-4" type="submit"><i class="bi bi-send me-1"></i>Send</button>

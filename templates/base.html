@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- SaaS Theme CSS -->
   <link href="{{ url_for('static', filename='css/dashboard-theme.css') }}" rel="stylesheet">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -184,6 +185,57 @@ if (searchInput) {
         }
     });
 }
+
+// Global CSRF Protection for forms and fetch requests
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!csrfToken) return;
+
+    // Auto-inject csrf_token into any POST forms if missing
+    document.querySelectorAll('form').forEach(function(form) {
+        const method = (form.getAttribute('method') || '').toUpperCase();
+        if (method === 'POST' && !form.querySelector('input[name="csrf_token"]')) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrf_token';
+            input.value = csrfToken;
+            form.appendChild(input);
+        }
+    });
+
+    function isSameOrigin(target) {
+        if (!target) return false;
+        try {
+            const url = typeof target === 'string' ? new URL(target, window.location.origin) : new URL(target.url, window.location.origin);
+            return url.origin === window.location.origin;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // Intercept native fetch to automatically attach X-CSRFToken only to same-origin mutating requests
+    const originalFetch = window.fetch;
+    window.fetch = function(resource, init = {}) {
+        const method = (init.method || 'GET').toUpperCase();
+        if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method) && isSameOrigin(resource)) {
+            init.headers = init.headers || {};
+            if (init.headers instanceof Headers) {
+                if (!init.headers.has('X-CSRFToken')) {
+                    init.headers.append('X-CSRFToken', csrfToken);
+                }
+            } else if (Array.isArray(init.headers)) {
+                if (!init.headers.some(([k]) => k.toLowerCase() === 'x-csrftoken')) {
+                    init.headers.push(['X-CSRFToken', csrfToken]);
+                }
+            } else {
+                if (!init.headers['X-CSRFToken']) {
+                    init.headers['X-CSRFToken'] = csrfToken;
+                }
+            }
+        }
+        return originalFetch(resource, init);
+    };
+});
 </script>
 </body>
 </html>

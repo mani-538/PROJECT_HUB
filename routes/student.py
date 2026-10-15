@@ -3,9 +3,10 @@ routes/student.py - Student Blueprint
 All student-facing routes: dashboard, projects, AI, queries, profile, etc.
 """
 import os
+import uuid
 from datetime import datetime, date, timedelta
 from flask import (Blueprint, render_template, redirect, url_for, flash,
-                   request, current_app, send_from_directory, jsonify)
+                   request, current_app, send_from_directory, jsonify, Response)
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import (db, Project, ProjectFile, ProjectUpdate, TeamMember,
@@ -14,12 +15,31 @@ from utils.decorators import student_required
 from utils.notifications import create_notification, log_activity
 from utils.ai_utils import suggest_projects, generate_description, analyze_resume
 from utils.pdf_utils import generate_certificate_pdf
+from utils.storage import save_file, get_file_bytes
 
 student = Blueprint('student', __name__, url_prefix='/student')
 
 
 def allowed_file(filename, allowed_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
+
+
+def user_has_project_file_access(user, project_file):
+    """Enforce project-file access using authenticated membership linked to user ID, ownership, or admin role."""
+    if not user or not user.is_authenticated:
+        return False
+    if getattr(user, 'role', None) in ('admin', 'super_admin'):
+        return True
+    project = project_file.project
+    if not project:
+        return False
+    if project.user_id == user.id:
+        return True
+    # Authenticated team membership linked strictly to user ID
+    for tm in project.team_members:
+        if tm.user_id is not None and tm.user_id == user.id:
+            return True
+    return False
 
 
 # ─────────────────────────────────────────────
@@ -187,7 +207,15 @@ def add_project():
             member_emails  = request.form.getlist('member_email[]')
             for n, r, e in zip(member_names, member_roles, member_emails):
                 if n.strip():
-                    tm = TeamMember(project_id=project.id, name=n.strip(), role=r.strip(), email=e.strip())
+                    email_clean = e.strip().lower() if e else ''
+                    matched_user = User.query.filter_by(email=email_clean).first() if email_clean else None
+                    tm = TeamMember(
+                        project_id=project.id,
+                        user_id=matched_user.id if matched_user else None,
+                        name=n.strip(),
+                        role=r.strip(),
+                        email=email_clean
+                    )
                     db.session.add(tm)
 
         # File upload
@@ -196,9 +224,11 @@ def add_project():
             if file and file.filename:
                 allowed = current_app.config['ALLOWED_PROJECT_EXTENSIONS']
                 if allowed_file(file.filename, allowed):
-                    fn = secure_filename(file.filename)
+                    clean_name = secure_filename(file.filename)
+                    unique_id = uuid.uuid4().hex[:12]
+                    fn = f"{unique_id}_{clean_name}"
+                    save_file(file, 'project_files', fn)
                     save_path = os.path.join(current_app.config['PROJECT_FILE_FOLDER'], fn)
-                    file.save(save_path)
                     pf = ProjectFile(project_id=project.id, filename=fn, file_path=save_path, version='1.0')
                     db.session.add(pf)
 
@@ -273,9 +303,11 @@ def upload_version(project_id):
     if file and file.filename and version:
         allowed = current_app.config['ALLOWED_PROJECT_EXTENSIONS']
         if allowed_file(file.filename, allowed):
-            fn        = secure_filename(file.filename)
-            save_path = os.path.join(current_app.config['PROJECT_FILE_FOLDER'], fn)
-            file.save(save_path)
+            clean_name = secure_filename(file.filename)
+            unique_id  = uuid.uuid4().hex[:12]
+            fn         = f"{unique_id}_{clean_name}"
+            save_file(file, 'project_files', fn)
+            save_path  = os.path.join(current_app.config['PROJECT_FILE_FOLDER'], fn)
             pf = ProjectFile(project_id=project_id, filename=fn, file_path=save_path, version=version, description=desc)
             db.session.add(pf)
             db.session.commit()
@@ -295,8 +327,16 @@ def upload_version(project_id):
 @login_required
 def download_file(file_id):
     pf = ProjectFile.query.get_or_404(file_id)
-    folder = current_app.config['PROJECT_FILE_FOLDER']
-    return send_from_directory(folder, pf.filename, as_attachment=True)
+    if not user_has_project_file_access(current_user, pf):
+        flash('You do not have permission to access this file.', 'danger')
+        return render_template('errors/403.html'), 403
+    data = get_file_bytes('project_files', pf.filename)
+    if not data:
+        return render_template('errors/404.html'), 404
+    download_name = pf.filename.split('_', 1)[1] if ('_' in pf.filename and len(pf.filename.split('_', 1)[0]) == 12) else pf.filename
+    response = Response(data, mimetype='application/octet-stream')
+    response.headers['Content-Disposition'] = f'attachment; filename="{download_name}"'
+    return response
 
 
 # ─────────────────────────────────────────────
@@ -349,8 +389,9 @@ def profile():
             if img and img.filename:
                 allowed = current_app.config['ALLOWED_IMAGE_EXTENSIONS']
                 if allowed_file(img.filename, allowed):
-                    fn = secure_filename(f"user_{current_user.id}_{img.filename}")
-                    img.save(os.path.join(current_app.config['PROFILE_IMAGE_FOLDER'], fn))
+                    clean_name = secure_filename(img.filename)
+                    fn = f"user_{current_user.id}_{uuid.uuid4().hex[:8]}_{clean_name}"
+                    save_file(img, 'profile_images', fn)
                     current_user.profile_image = fn
 
         # Resume upload
@@ -359,8 +400,9 @@ def profile():
             if res and res.filename:
                 allowed = current_app.config['ALLOWED_RESUME_EXTENSIONS']
                 if allowed_file(res.filename, allowed):
-                    fn = secure_filename(f"resume_{current_user.id}_{res.filename}")
-                    res.save(os.path.join(current_app.config['RESUME_FOLDER'], fn))
+                    clean_name = secure_filename(res.filename)
+                    fn = f"resume_{current_user.id}_{uuid.uuid4().hex[:8]}_{clean_name}"
+                    save_file(res, 'resumes', fn)
                     current_user.resume = fn
 
         db.session.commit()
@@ -375,14 +417,25 @@ def profile():
 @login_required
 def download_resume():
     if current_user.resume:
-        return send_from_directory(current_app.config['RESUME_FOLDER'], current_user.resume, as_attachment=True)
+        data = get_file_bytes('resumes', current_user.resume)
+        if not data:
+            return render_template('errors/404.html'), 404
+        clean_name = current_user.resume.split('_', 3)[-1] if '_' in current_user.resume else current_user.resume
+        response = Response(data, mimetype='application/pdf')
+        response.headers['Content-Disposition'] = f'attachment; filename="{clean_name}"'
+        return response
     flash('No resume uploaded.', 'warning')
     return redirect(url_for('student.profile'))
 
 
 @student.route('/profile/image/<filename>')
 def profile_image(filename):
-    return send_from_directory(current_app.config['PROFILE_IMAGE_FOLDER'], filename)
+    data = get_file_bytes('profile_images', filename)
+    if not data:
+        return render_template('errors/404.html'), 404
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'jpeg'
+    mime = f'image/{ext}' if ext != 'jpg' else 'image/jpeg'
+    return Response(data, mimetype=mime)
 
 
 # ─────────────────────────────────────────────
@@ -544,16 +597,11 @@ def download_certificate(cert_id):
         return render_template('errors/404.html'), 404
         
     if cert.status == 'approved' and cert.pdf_path:
-        from flask import make_response
-        filepath = os.path.join(current_app.config['CERTIFICATE_FOLDER'], cert.pdf_path)
-        if not os.path.exists(filepath):
+        data = get_file_bytes('certificates', cert.pdf_path)
+        if not data:
             return render_template('errors/404.html'), 404
         
-        with open(filepath, 'rb') as f:
-            file_data = f.read()
-            
-        response = make_response(file_data)
-        response.headers['Content-Type'] = 'application/pdf'
+        response = Response(data, mimetype='application/pdf')
         response.headers['Content-Disposition'] = f'inline; filename="{cert.pdf_path}"'
         return response
         

@@ -3,13 +3,27 @@ routes/auth.py - Authentication Blueprint
 Handles role selection, signup, profile setup, login, and logout.
 """
 import os
+from urllib.parse import urlsplit
 from flask import Blueprint, render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.utils import secure_filename
 from models import db, User
 from utils.notifications import log_activity
+from utils.csrf import rotate_csrf_token
 
 auth = Blueprint('auth', __name__)
+
+
+def is_safe_redirect_url(target):
+    """Validate that a redirect target is a safe relative URL on the current host."""
+    if not target:
+        return False
+    if not target.startswith('/') or target.startswith('//') or target.startswith('/\\'):
+        return False
+    parsed = urlsplit(target)
+    if parsed.scheme or parsed.netloc:
+        return False
+    return True
 
 
 @auth.route('/', methods=['GET', 'POST'])
@@ -24,8 +38,9 @@ def role_select():
 
 @auth.route('/signup/<role>', methods=['GET', 'POST'])
 def signup(role):
-    """Student or Admin signup."""
-    if role not in ('student', 'admin'):
+    """Student signup only. Admin registration is disabled."""
+    if role != 'student':
+        flash('Administrator registration is disabled. Please sign in or contact an administrator.', 'danger')
         return redirect(url_for('auth.role_select'))
 
     if request.method == 'POST':
@@ -114,15 +129,16 @@ def login():
             flash('Invalid email/username or password.', 'danger')
             return render_template('auth/login.html')
 
-        if user.is_blocked:
-            flash('Your account has been blocked. Contact admin.', 'danger')
+        if user.is_blocked or not user.is_active:
+            flash('Your account has been blocked or deactivated. Contact admin.', 'danger')
             return render_template('auth/login.html')
 
         login_user(user, remember=remember)
+        rotate_csrf_token()
         log_activity(user.id, 'Logged in', 'auth')
 
         next_page = request.args.get('next')
-        if next_page:
+        if next_page and is_safe_redirect_url(next_page):
             return redirect(next_page)
         if user.role == 'admin':
             return redirect(url_for('admin.dashboard'))
@@ -137,5 +153,6 @@ def logout():
     """Logout."""
     log_activity(current_user.id, 'Logged out', 'auth')
     logout_user()
+    rotate_csrf_token()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))

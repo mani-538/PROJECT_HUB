@@ -8,6 +8,7 @@
 
 <div class="card p-4">
   <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="row g-4">
 
       <!-- Basic Info -->
