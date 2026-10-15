@@ -104,25 +104,27 @@ def create_app(test_config=None):
         db.create_all()
         click.secho("Database tables verified / created successfully.", fg="green")
         if seed_trial_accounts:
-            # Seed trial admin if absent
-            admin = User.query.filter_by(role='admin').first()
+            # Seed trial admin if absent (never alters or unblocks existing accounts)
+            admin = User.query.filter((User.role == 'admin') | (User.email == 'admin@projecthub.com')).first()
             if not admin:
                 trial_admin = User(
                     username="trial_admin",
                     name="Trial Administrator",
                     email="admin@projecthub.com",
                     role="admin",
-                    department="Administration"
+                    department="Administration",
+                    is_active=True,
+                    is_blocked=False
                 )
                 admin_pw = os.environ.get('INITIAL_ADMIN_PASSWORD', 'AdminTrial@ProjectHub2026')
                 trial_admin.set_password(admin_pw)
                 db.session.add(trial_admin)
                 click.secho("Created trial admin account (admin@projecthub.com).", fg="green")
             else:
-                click.secho(f"Admin account already exists ({admin.email}). Skipped.", fg="cyan")
+                click.secho(f"Admin account already exists ({admin.email}). Skipped without modifying status.", fg="cyan")
 
-            # Seed trial student if absent
-            student = User.query.filter_by(role='student').first()
+            # Seed trial student if absent (never alters or unblocks existing accounts)
+            student = User.query.filter((User.role == 'student') | (User.email == 'student@projecthub.com')).first()
             if not student:
                 trial_student = User(
                     username="trial_student",
@@ -132,13 +134,15 @@ def create_app(test_config=None):
                     college="Project Hub Demo Academy",
                     department="Computer Science & Engineering",
                     year="Final Year",
-                    bio="Trial student account for testing and exploring Project Hub features."
+                    bio="Trial student account for testing and exploring Project Hub features.",
+                    is_active=True,
+                    is_blocked=False
                 )
                 trial_student.set_password(os.environ.get('INITIAL_STUDENT_PASSWORD', 'Student@123'))
                 db.session.add(trial_student)
                 click.secho("Created trial student account (student@projecthub.com).", fg="green")
             else:
-                click.secho(f"Student account already exists ({student.email}). Skipped.", fg="cyan")
+                click.secho(f"Student account already exists ({student.email}). Skipped without modifying status.", fg="cyan")
 
             db.session.commit()
 

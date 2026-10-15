@@ -153,6 +153,56 @@ class Phase1SecurityTestCase(unittest.TestCase):
             admin = User.query.filter_by(username='cliadmin').first()
             self.assertTrue(admin.check_password('StrongAdminPass1!'), "Password must not be overwritten")
 
+    def test_init_db_preserves_blocked_and_inactive_users(self):
+        """init-db must seed missing accounts only and never reactivate or unblock existing users."""
+        runner = self.app.test_cli_runner()
+
+        # Pre-create a blocked and inactive admin & student
+        with self.app.app_context():
+            blocked_admin = User(
+                username='existing_blocked_admin',
+                name='Blocked Admin',
+                email='admin@projecthub.com',
+                role='admin',
+                department='Admin',
+                is_active=False,
+                is_blocked=True
+            )
+            blocked_admin.set_password('AdminOldPassword123!')
+            db.session.add(blocked_admin)
+
+            blocked_student = User(
+                username='existing_blocked_student',
+                name='Blocked Student',
+                email='student@projecthub.com',
+                role='student',
+                is_active=False,
+                is_blocked=True
+            )
+            blocked_student.set_password('StudentOldPassword123!')
+            db.session.add(blocked_student)
+            db.session.commit()
+
+        # Run init-db
+        result = runner.invoke(args=['init-db'])
+        self.assertEqual(result.exit_code, 0)
+        self.assertIn("already exists", result.output)
+        self.assertIn("Skipped without modifying status", result.output)
+
+        # Confirm users remain blocked, inactive, and passwords unchanged
+        with self.app.app_context():
+            admin_after = User.query.filter_by(email='admin@projecthub.com').first()
+            self.assertIsNotNone(admin_after)
+            self.assertFalse(admin_after.is_active, "Existing admin must not be reactivated")
+            self.assertTrue(admin_after.is_blocked, "Existing admin must remain blocked")
+            self.assertTrue(admin_after.check_password('AdminOldPassword123!'))
+
+            student_after = User.query.filter_by(email='student@projecthub.com').first()
+            self.assertIsNotNone(student_after)
+            self.assertFalse(student_after.is_active, "Existing student must not be reactivated")
+            self.assertTrue(student_after.is_blocked, "Existing student must remain blocked")
+            self.assertTrue(student_after.check_password('StudentOldPassword123!'))
+
     # 4. Reject blocked users on existing sessions
     def test_blocked_user_session_rejected(self):
         with self.app.app_context():
