@@ -2,6 +2,7 @@
 utils/pdf_utils.py - PDF generation utilities for certificates and reports
 """
 import os
+import uuid
 from datetime import datetime
 
 
@@ -15,7 +16,7 @@ def generate_certificate_pdf(user_name, project_title, certificate_folder):
         from reportlab.lib.units import inch
         from reportlab.pdfgen import canvas
 
-        filename = f"certificate_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.pdf"
+        filename = f"certificate_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}.pdf"
         filepath = os.path.join(certificate_folder, filename)
 
         c = canvas.Canvas(filepath, pagesize=landscape(A4))
@@ -98,7 +99,7 @@ def generate_report_pdf(stats, report_folder):
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
         from reportlab.lib.styles import getSampleStyleSheet
 
-        filename = f"report_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}.pdf"
+        filename = f"report_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:8]}.pdf"
         filepath = os.path.join(report_folder, filename)
 
         doc = SimpleDocTemplate(filepath, pagesize=A4)

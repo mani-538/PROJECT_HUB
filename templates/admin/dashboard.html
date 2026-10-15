@@ -120,10 +120,12 @@
               </td>
               <td class="text-end align-middle">
                 <form action="{{ url_for('admin.project_action', project_id=p.id) }}" method="POST" class="d-inline">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="action" value="approve">
                   <button type="submit" class="btn btn-sm btn-success py-1 px-3 shadow-sm rounded-pill fw-bold" {% if p.status != 'pending' %}disabled{% endif %}><i class="fas fa-check"></i></button>
                 </form>
                 <form action="{{ url_for('admin.project_action', project_id=p.id) }}" method="POST" class="d-inline ms-1">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <input type="hidden" name="action" value="reject">
                   <button type="submit" class="btn btn-sm btn-danger py-1 px-3 shadow-sm rounded-pill fw-bold" {% if p.status != 'pending' %}disabled{% endif %}><i class="fas fa-times"></i></button>
                 </form>
@@ -164,6 +166,7 @@
               <td class="align-middle"><span class="badge bg-light text-dark shadow-sm border">{{ u.department or 'N/A' }}</span></td>
               <td class="text-end align-middle">
                 <form action="{{ url_for('admin.delete_user', user_id=u.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Remove this user completely?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2 fw-medium border-0"><i class="fas fa-trash-alt fs-6"></i></button>
                 </form>
               </td>
@@ -250,6 +253,7 @@
 <div class="saas-card shadow-sm border-0 mb-4">
   <h6 class="card-header-title fw-bold mb-3"><i class="fas fa-broadcast-tower text-primary me-2"></i>Broadcast Alert</h6>
   <form action="{{ url_for('admin.announcements') }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="text" name="title" class="form-control form-control-sm mb-2 shadow-sm border-0 bg-light py-2" placeholder="Message subject..." required>
     <textarea name="content" class="form-control form-control-sm mb-3 shadow-sm border-0 bg-light p-2" rows="3" placeholder="Type notification details..." required></textarea>
     <button type="submit" class="btn btn-sm btn-saas w-100 fw-bold rounded-pill shadow-sm"><i class="fas fa-paper-plane me-2"></i>Send Broadcast</button>

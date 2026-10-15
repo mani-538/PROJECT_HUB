@@ -2,8 +2,11 @@
 {% block title %}Resume Analyzer{% endblock %}
 {% block content %}
 <div class="page-header">
-  <h1><i class="bi bi-file-person me-2 text-success"></i>AI Resume Analyzer</h1>
-  <p>Upload your resume to get an AI-powered score, strengths, and improvement suggestions.</p>
+  <h1><i class="bi bi-file-person me-2 text-success"></i>Resume Readiness Checker</h1>
+  <p>Review your engineering resume against standard heuristic guidelines and recommendations.</p>
+</div>
+<div class="alert alert-info py-2 small mb-4">
+  <i class="bi bi-info-circle me-1"></i><strong>Simulated Feature:</strong> Provides an offline, rule-based heuristic readiness review and formatting recommendations. No external paid AI APIs are called.
 </div>
 <div class="row g-4">
   <div class="col-md-4">
@@ -12,6 +15,7 @@
       <h5 class="fw-700 mt-3 mb-2" style="font-weight:700;">Upload Your Resume</h5>
       <p style="color:rgba(255,255,255,0.7);font-size:0.9rem;">Supports PDF, DOC, DOCX formats</p>
       <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-3">
           <input type="file" name="resume_file" class="form-control" accept=".pdf,.doc,.docx" required>
         </div>
@@ -28,7 +32,7 @@
       <div class="card p-4 mb-4 text-center">
         <div class="stat-card {% if result.score >= 80 %}stat-success{% elif result.score >= 60 %}stat-warning{% else %}stat-danger{% endif %} d-inline-block mx-auto px-5 py-4 rounded">
           <div class="number">{{ result.score }}</div>
-          <div class="label">Resume Score / 100</div>
+          <div class="label">Heuristic Readiness Score / 100</div>
           <div class="mt-2"><span class="badge bg-white text-dark fs-5">Grade: {{ result.grade }}</span></div>
         </div>
         <div class="mt-3">

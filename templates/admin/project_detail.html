@@ -55,6 +55,7 @@
     <div class="saas-card shadow-sm border-0 mb-4" style="border: 1px solid rgba(108, 92, 231, 0.2) !important; background: linear-gradient(145deg, #ffffff, #f8f9ff);">
       <h6 class="card-header-title fw-bold mb-4 text-primary"><i class="fas fa-gavel me-2"></i>Process Evaluation</h6>
       <form method="POST" action="{{ url_for('admin.project_action', project_id=project.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label fw-bold small">Decision</label>

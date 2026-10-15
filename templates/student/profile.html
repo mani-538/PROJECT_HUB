@@ -49,6 +49,7 @@
     <div class="saas-card p-4 mb-0">
       <h6 class="card-header-title fw-bold mb-4"><i class="fas fa-user-edit text-primary me-2"></i>Edit Information</h6>
       <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="row g-3">
           <div class="col-md-6">
             <label class="form-label fw-bold small">Full Name</label>

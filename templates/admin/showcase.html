@@ -30,6 +30,7 @@
           {% endif %}
         </div>
         <form method="POST" action="{{ url_for('admin.toggle_showcase', project_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button type="submit" class="btn btn-sm {% if p.is_public %}btn-outline-danger{% else %}btn-success{% endif %} px-3">
             <i class="bi {% if p.is_public %}bi-eye-slash{% else %}bi-eye{% endif %} me-1"></i>
             {{ 'Remove from Showcase' if p.is_public else 'Add to Showcase' }}

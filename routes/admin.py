@@ -3,9 +3,10 @@ routes/admin.py - Admin Blueprint
 Full admin control panel: projects, users, queries, announcements, reports, etc.
 """
 import os
+import uuid
 from datetime import datetime
 from flask import (Blueprint, render_template, redirect, url_for, flash,
-                   request, current_app, send_from_directory, jsonify)
+                   request, current_app, send_from_directory, jsonify, Response)
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from models import (db, User, Project, Query, Notification, Announcement,
@@ -13,6 +14,7 @@ from models import (db, User, Project, Query, Notification, Announcement,
 from utils.decorators import admin_required
 from utils.notifications import create_notification, log_activity
 from utils.pdf_utils import generate_certificate_pdf, generate_report_pdf
+from utils.storage import save_file, get_file_bytes
 
 def allowed_file(filename, allowed_set):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_set
@@ -179,6 +181,12 @@ def users():
 @admin_required
 def block_user(user_id):
     user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('You cannot block your own account.', 'danger')
+        return redirect(url_for('admin.users'))
+    if user.role == 'admin':
+        flash('Administrator accounts cannot be blocked.', 'danger')
+        return redirect(url_for('admin.users'))
     user.is_blocked = not user.is_blocked
     db.session.commit()
     status = 'blocked' if user.is_blocked else 'unblocked'
@@ -192,6 +200,15 @@ def block_user(user_id):
 @admin_required
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
+    if user.id == current_user.id:
+        flash('You cannot delete your own account.', 'danger')
+        return redirect(url_for('admin.users'))
+    if user.role == 'admin':
+        flash('Administrator accounts cannot be deleted.', 'danger')
+        return redirect(url_for('admin.users'))
+    if current_app.config.get('DISABLE_DESTRUCTIVE_ADMIN', True):
+        flash('Destructive actions (user deletion) are disabled on trial deployment.', 'warning')
+        return redirect(url_for('admin.users'))
     db.session.delete(user)
     db.session.commit()
     log_activity(current_user.id, f'Deleted user: {user.username}', 'admin')
@@ -317,6 +334,10 @@ def reports():
         }
         report_folder = current_app.config['UPLOAD_FOLDER']  # using general upload folder 
         filename = generate_report_pdf(stats, report_folder)
+        report_path = os.path.join(report_folder, filename)
+        if os.path.exists(report_path):
+            with open(report_path, 'rb') as f:
+                save_file(f.read(), 'reports', filename)
         log_activity(current_user.id, 'Generated system report', 'admin')
         flash('Report generated successfully.', 'success')
         return redirect(url_for('admin.download_report', filename=filename))
@@ -328,17 +349,11 @@ def reports():
 @login_required
 @admin_required
 def download_report(filename):
-    import os
-    from flask import make_response
-    filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-    if not os.path.exists(filepath):
+    data = get_file_bytes('reports', filename)
+    if not data:
         return render_template('errors/404.html'), 404
     
-    with open(filepath, 'rb') as f:
-        file_data = f.read()
-    
-    response = make_response(file_data)
-    response.headers['Content-Type'] = 'application/pdf'
+    response = Response(data, mimetype='application/pdf')
     response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
     return response
 
@@ -366,6 +381,10 @@ def approve_certificate(cert_id):
     # Generate PDF
     cert_folder = current_app.config['CERTIFICATE_FOLDER']
     filename    = generate_certificate_pdf(user.name or user.username, project.title, cert_folder)
+    cert_path   = os.path.join(cert_folder, filename)
+    if os.path.exists(cert_path):
+        with open(cert_path, 'rb') as f:
+            save_file(f.read(), 'certificates', filename)
     cert.pdf_path  = filename
     cert.status    = 'approved'
     cert.issued_at = datetime.utcnow()
@@ -488,8 +507,9 @@ def profile():
             if img and img.filename:
                 allowed = current_app.config['ALLOWED_IMAGE_EXTENSIONS']
                 if allowed_file(img.filename, allowed):
-                    fn = secure_filename(f"admin_{current_user.id}_{img.filename}")
-                    img.save(os.path.join(current_app.config['PROFILE_IMAGE_FOLDER'], fn))
+                    clean_name = secure_filename(img.filename)
+                    fn = f"admin_{current_user.id}_{uuid.uuid4().hex[:8]}_{clean_name}"
+                    save_file(img, 'profile_images', fn)
                     current_user.profile_image = fn
 
         db.session.commit()

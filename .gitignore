@@ -5,18 +5,24 @@ __pycache__/
 .env
 venv/
 env/
+.venv/
 
 # Database
 instance/
 project_hub.db
+*.db
+*.db.bak
+*.sqlite
+*.sqlite3
 
-# Flask
-uploads/certificates/*
-uploads/profile_images/*
-uploads/project_files/*
-uploads/resumes/*
+# Uploads
+uploads/*
+!uploads/*/
 !uploads/.gitkeep
+uploads/*/*
+!uploads/*/.gitkeep
 
 # IDEs
 .vscode/
 .idea/
+
